@@ -342,3 +342,12 @@
 ;; (list 1 (list 2 (list 3 4)))
 ;; Root node 1 with one child, 2, with two children 3 and 4
 
+;; Exercise 2.25
+(car (cdr (car (cdr (cdr (list 1 2 (list 5 7) 9))))))
+
+(car (car (list (list 7))))
+
+(define x (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 7)))))))
+
+(car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr x))))))))))))
+
