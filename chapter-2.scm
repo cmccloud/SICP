@@ -3,7 +3,8 @@
 
 ;; Representation of Rational Numbers - Concrete Data Specification
 (define (make-rat n d)
-  (cons n d))
+  (let ((g (gcd n d)))
+    (cons (/ n g) (d g))))
 
 ;; Interface
 (define (numer x)
@@ -34,3 +35,18 @@
 (define (equals-rat? x y)
   (= (* (numer x) (denom y))
      (* (numer y) (denom x))))
+
+(define (print-rat x)
+  (newline)
+  (display (numer x))
+  (display "/")
+  (display (denom x)))
+
+;; Helpers
+
+(define (gcd x y)
+  (if (> y x) (gcd y x)
+      (let ((r (remainder x y)))
+        (if (= r 0) y
+            (gcd y r)))))
+
