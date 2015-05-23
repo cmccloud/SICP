@@ -357,3 +357,8 @@
 (append x y) ;; -> (1 2 3 4 5 6)
 (cons x y) ;; ((1 2 3) 4 5 6)
 (list x y) ;; ((1 2 3) (4 5 6))
+
+;; Exercise 2.27
+(define (deep-reverse x)
+  (if (not (pair? x)) x
+      (map deep-reverse (reverse x))))
