@@ -362,3 +362,9 @@
 (define (deep-reverse x)
   (if (not (pair? x)) x
       (map deep-reverse (reverse x))))
+
+;; Exercise 2.28
+(define (fringe tree)
+  (if (not (pair? tree)) (list tree)
+      (apply append (map fringe tree))))
+
