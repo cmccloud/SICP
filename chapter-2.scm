@@ -55,8 +55,8 @@
 (define (make-rat-with-negs x y)
   (if (= (sign x) (sign y))
       (make-rat (abs x) (abs y))
-      (make-rat (abs x)
-                (- (abs y)))))
+      (make-rat (- (abs x))
+                (abs y))))
 
 (define (sign x)
   (if (>= x 0) 1 0))
