@@ -172,3 +172,90 @@
 
 (define (add-church m n)
   (lambda (f) (lambda (x) ((m f) ((n f) x)))))
+
+;; Interval Arithmetic
+(define (add-interval x y)
+  (let ((min (+ (lower-bound x) (lower-bound y)))
+        (max (+ (upper-bound x) (upper-bound y))))
+    (make-interval min max)))
+
+(define (mul-interval x y)
+  (let ((p1 (* (lower-bound x) (lower-bound y)))
+        (p2 (* (lower-vound x) (upper-bound y)))
+        (p3 (* (upper-bound x) (lower-bound y)))
+        (p4 (* (upper-bound x) (upper-bound y))))
+    (make-interval (min p1 p2 p3 p4)
+                   (max p1 p2 p3 p4))))
+
+;; Exercise 2.10
+(define (div-interval x y)
+  (let ((upper (upper-bound y))
+        (lower (lower-bound y)))
+    (if (or (= upper 0) (= lower 0))
+        (display "Error, cannot divide by Zero")
+        (mul-interval x (make-interval (/ 1.0 upper)
+                                       (/ 1.0 lower))))))
+
+(define (make-interval a b)
+  (cons a b))
+
+;; Exercise 2.7
+(define (upper-bound x)
+  (let ((p1 (car x))
+        (p2 (cdr x)))
+    (if (> p1 p2) p1
+        p2)))
+
+(define (lower-bound x)
+  (let ((p1 (car x))
+        (p2 (cdr x)))
+    (if (< p1 p2) p1
+        p2)))
+
+;; Exercise 2.8
+(define (sub-interval x y)
+  (make-interval (- (lower-bound x) (lower-bound y))
+                 (- (upper-bound x) (upper-bound y))))
+
+;; Exercise 2.9
+(define (width-interval x)
+  (/ (- (upper-bound x) (lower-bound x)) 2))
+
+(define (assert-width x y)
+  (let ((width-x (width-interval x))
+        (width-y (width-interval y))
+        (width-sum (width-interval (add-interval x y)))
+        (sum-widths (add-interval width-x width-y))
+        (width-diff (width-interval (sub-interval x y)))
+        (diff-widths (sub-interval width-x width-y)))
+    (display "Width of X")
+    (display width-x)
+    (display "Width of Y")
+    (display width-y)
+    (display "Width of Sum of Intervals X Y")
+    (display width-sum)
+    (display "Sum of Adding Width of X and Width of Y")
+    (display sum-widths)
+    (display "Width of the difference of X Y")
+    (display width-diff)
+    (dispaly "Difference of the widths of X Y")
+    (display diff-widths)))
+
+(define (make-center-width c w)
+  (make-interval (- c w) (+ c w)))
+
+(define (center i)
+  (/ (+ (lower-bound i) (upper-bound i)) 2))
+
+(define (width i)
+  (/ (- (upper-bound i) (lower-bound i)) 2))
+
+;; Exercise 2.12
+(define (make-center-percent c t)
+  (make-center-width (c (/ (* c t) 100.00))))
+
+(define (percent-interval i)
+  (/ (width i) (center i)))
+
+
+;; Hierarchical Data and Closure Property
