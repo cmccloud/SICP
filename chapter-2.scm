@@ -259,3 +259,13 @@
 
 
 ;; Hierarchical Data and Closure Property
+
+;; Define nil as end of list marker for convenience
+(define nil '())
+
+;; Exercise 2.17
+(define (last-pair x)
+  (cond ((null? x) nil)
+        ((null? (cdr x)) x)
+        (else (last-pair (cdr x)))))
+
