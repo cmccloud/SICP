@@ -269,3 +269,12 @@
         ((null? (cdr x)) x)
         (else (last-pair (cdr x)))))
 
+;; Exercise 2.18
+(define (reverse x)
+  (define (reverse-helper x state)
+    (if (null? x) state
+        (reverse-helper (cdr x)
+                        (cons (car x)
+                              state))))
+  (reverse-helper x nil))
+
