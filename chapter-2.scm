@@ -139,3 +139,36 @@
   (cons (make-segment a b)
         (make-segment c d)))
 
+;; Exercise 2.4
+(define (my-cdr z)
+  (z (lambda (p q) q)))
+
+;; Exercise 2.5
+(define (pair-int a b)
+  (define (pow x y)
+    (cond ((= y 0) 1)
+          ((= y 1) x)
+          (else (* x (pow x (- y 1))))))
+  (* (pow 2 a) (pow 3 b)))
+
+(define (divides-num num divisor)
+  (define (iter x result)
+    (cond ((= 0 (remainder x divisor))
+           (iter (/ x divisor) (+ result 1)))
+          (else result)))
+  (iter num 0))
+
+(define (first-int pair)
+  (divides-num pair 2))
+
+(define (second-int pair)
+  (divides-num pair 3))
+
+;; Exercise 2.6
+(define zero (lambda (f) (lambda (x) x)))
+
+(define (add-1 n)
+  (lambda (f) (lambda (x) (f ((n f) x)))))
+
+(define (add-church m n)
+  (lambda (f) (lambda (x) ((m f) ((n f) x)))))
