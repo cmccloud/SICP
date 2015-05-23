@@ -332,3 +332,13 @@
       (begin
         (f (car list))
         (my-for-each-2 f (cdr list)))))
+
+;; Exercise 2.24
+(define (count-leaves tree)
+  (cond ((null? tree) 0)
+        ((not (pair? tree)) 1)
+        (else (apply + (map count-leaves tree)))))
+
+;; (list 1 (list 2 (list 3 4)))
+;; Root node 1 with one child, 2, with two children 3 and 4
+
