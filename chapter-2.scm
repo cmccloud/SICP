@@ -297,3 +297,38 @@
 (define (no-more? x)
   (null? x))
 
+;; Exercise 2.20 - without map, filter, or other higher order functions
+(define (same-parity x . y)
+  (define (same-parity-helper x y)
+    (cond ((null? y) nil)
+          ((or (and (even? x) (even? (car y)))
+               (and (odd? x) (odd? (car y))))
+           (cons (car y)
+                 (same-parity-helper x (cdr y))))
+          (else (same-parity-helper x (cdr y)))))
+  (cons x (same-parity-helper x y)))
+
+;; Exercise 2.21
+(define (square-list items)
+  (if (null? items) nil
+      (cons (square (car items))
+            (square-list (cdr items)))))
+
+(define (square-list items)
+  (map square items))
+
+;; Exercise 2.22
+;; In the first case Louis doesn't recognize that lists build onto the front and our iterative process starts from the front as well - he's using a queue like structure for storage when what he wants is a stack (i.e. the call stack)
+;; In the second case Louis is trying to conjoin nil which is terminating the list
+
+;; Exercise 2.23
+(define (my-for-each f list)
+  (cond ((null? list) #t)
+        (else (f (car list))
+              (for-each f (cdr list)))))
+
+(define (my-for-each-2 f list)
+  (if (null? list) #t
+      (begin
+        (f (car list))
+        (my-for-each-2 f (cdr list)))))
