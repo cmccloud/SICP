@@ -1,5 +1,18 @@
 ;; Rational Arithmetic
 ;; 2.1.1
+
+;; Representation of Rational Numbers - Concrete Data Specification
+(define (make-rat n d)
+  (cons n d))
+
+;; Interface
+(define (numer x)
+  (car x))
+
+(define (denom x)
+  (cdr x))
+
+;; Prodcedure definitions - operations on abstract rationals
 (define (add-rat x y)
   (make-rat (+ (* (numer x) (denom y))
                (* (numer y) (denom x)))
