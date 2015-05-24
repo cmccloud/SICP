@@ -478,3 +478,9 @@
 
 (define (length seq)
   (accumulate (lambda (ele count) (+ count 1)) 0 seq))
+
+;; Exercise 2.34
+(define (horder-eval x coefficient-sequence)
+  (accumulate (lambda (this-coeff higher-terms)
+                (+ (* x higher-terms)
+                   (this-coeff))) 0 coefficient-sequence))
