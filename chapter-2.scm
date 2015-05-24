@@ -409,8 +409,8 @@
 
 (define (submobiles mobile)
   (let* ((branches (list (left-branch mobile) (right-branch mobile)))
-         (structs (map (lambda (x) (branch-structure x)) branches)))
-    (filter (lambda (x) (pair? x) structs))))
+         (structs (map branch-structure branches)))
+    (filter pair? structs)))
 
 
 ;; When we redefine make mobile
