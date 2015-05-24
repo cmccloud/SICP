@@ -489,3 +489,10 @@
 (define (count-leaves t)
   (accumulate + 0 (map (lambda (x) (if (pair? x) (count-leaves x) 1)) t)))
 
+;; Exercise 2.36
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs)) nil
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
+
