@@ -507,3 +507,10 @@
 
 ;; For any binary procedure f, (fold-right f (n1....nn)) will equal (fold-left f (n1....nn))
 ;; if (f x y) === (f y x), i.e. f must be commutative
+
+;; Exercise 2.39
+(define (reverse sequence)
+  (fold-right (lambda (x y) (append y (list x))) nil sequence))
+
+(define (reverse sequence)
+  (fold-left (lambda (x y) (cons y x)) nil sequence))
