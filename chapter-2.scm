@@ -455,9 +455,26 @@
 (define (square-tree tree) (tree-map square tree))
 
 ;; Exercise 2.32
+
+;; prepend helper
+(define (prepend x) (lambda (y) (cons x y)))
+
 (define (subsets s)
-  (define (prepend x) (lambda (y) (cons x y)))
   (if (null? s) (list nil)
       (let ((rest (subsets (cdr s))))
         (append rest (map (prepend (car s)) rest)))))
 
+;; Exercise 2.33
+(define (accumulate op initial seq)
+  (if (null? seq) initial
+      (op (car seq)
+          (accumulate op initial (cdr seq)))))
+
+(define (my-map p seq)
+  (accumulate (lambda (x y) (cons (p x) y)) nil seq))
+
+(define (my-append seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (length seq)
+  (accumulate (lambda (ele count) (+ count 1)) 0 seq))
