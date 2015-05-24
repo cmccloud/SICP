@@ -430,7 +430,6 @@
   (cdr branch))
 
 ;; Exercise 2.30
-
 (define (square-tree tree)
   (cond ((null? tree) nil)
         ((not (pair? tree)) (square tree))
@@ -445,7 +444,6 @@
        tree))
 
 ;; Exercise 2.31
-
 (define (tree-map f tree)
   (map (lambda (sub-tree)
          (if (pair? sub-tree)
@@ -455,4 +453,10 @@
 
 (define (square-tree tree) (tree-map square tree))
 
+;; Exercise 2.32
+(define (subsets s)
+  (define (prepend x) (lambda (y) (cons x y)))
+  (if (null? s) (list nil)
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (prepend (car s)) rest)))))
 
