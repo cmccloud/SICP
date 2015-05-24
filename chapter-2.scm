@@ -368,3 +368,63 @@
   (if (not (pair? tree)) (list tree)
       (apply append (map fringe tree))))
 
+;; Exercise 2.29
+(define (make-mobile left right)
+  (list left right))
+
+(define (make-branch length structure)
+  (list length structure))
+
+(define (left-branch mobile)
+  (list-ref mobile 0))
+
+(define (right-branch mobile)
+  (list-ref mobile 1))
+
+(define (branch-length branch)
+  (list-ref branch 0))
+
+(define (branch-structure branch)
+  (list-ref branch 1))
+
+(define (total-weight mobile)
+  (+ (branch-weight (left-branch mobile))
+     (branch-weight (right-branch mobile))))
+
+(define (branch-weight branch)
+  (let ((struct (branch-structure branch)))
+    (if (pair? struct)
+        (total-weight struct)
+        struct)))
+
+(define (balanced mobile)
+  (and (= (torque (right-branch mobile))
+          (torque (left-branch mobile)))
+       (every balanced (submobiles mobile))))
+
+(define (torque branch)
+  (* (branch-length branch)
+     (branch-weight branch)))
+
+(define (submobiles mobile)
+  (let* ((branches (list (left-branch mobile) (right-branch mobile)))
+         (structs (map (lambda (x) (branch-structure x)) branches)))
+    (filter (lambda (x) (pair? x) structs))))
+
+
+;; When we redefine make mobile
+(define (make-mobile left right) (cons left right))
+
+(define (make-branch length structure) (cons length structure))
+
+(define (left-branch mobile)
+  (car mobile))
+
+(define (right-branch mobile)
+  (cdr mobile))
+
+(define (branch-length branch)
+  (car branch))
+
+(define (branch-structure branch)
+  (cdr branch))
