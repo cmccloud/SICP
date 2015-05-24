@@ -365,8 +365,9 @@
 
 ;; Exercise 2.28
 (define (fringe tree)
-  (if (not (pair? tree)) (list tree)
-      (apply append (map fringe tree))))
+  (cond ((null? tree) nil)
+        ((not (pair? tree)) (list tree))
+        (else (apply append (map fringe tree)))))
 
 ;; Exercise 2.29
 (define (make-mobile left right)
