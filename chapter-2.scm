@@ -495,4 +495,15 @@
       (cons (accumulate op init (map car seqs))
             (accumulate-n op init (map cdr seqs)))))
 
+;; Exercise 2.37
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
 
+;; Exercise 2.38
+(fold-right / 1 (list 1 2 3)) ; -> (3/2)
+(fold-left / 1 (list 1 2 3)) ; -> (1/6)
+(fold-right list nil (list 1 2 3)) ; -> (1 (2 (3 ())))
+(fold-left list nil (list 1 2 3)) ; ->  (((() 3) 2) 1)
+
+;; For any binary procedure f, (fold-right f (n1....nn)) will equal (fold-left f (n1....nn))
+;; if (f x y) === (f y x), i.e. f must be commutative
