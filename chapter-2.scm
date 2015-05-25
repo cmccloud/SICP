@@ -552,3 +552,13 @@
   (let* ((all-j (range 1 n))
          (all-pairs (flat-map (make-i-range n) all-j)))
     (filter (compose prime? summation) all-pairs)))
+
+;; Exercise: Permutations of a set
+(define (remove-member m set)
+  (filter (lambda (x) (not (= m x))) set))
+
+(define (permutations set)
+  (if (null? set) (list nil)
+      (flat-map (lambda (x)
+                 (map (prepend x)
+                      (permutations (remove-member x set)))) set)))
