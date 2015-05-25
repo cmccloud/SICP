@@ -514,3 +514,41 @@
 
 (define (reverse sequence)
   (fold-left (lambda (x y) (cons y x)) nil sequence))
+
+;; Nested Mapping problem
+;; Given some positive integer n, find all ordered pairs of distinct positive integers (i, j) such that 1 <= j < i <= n and i + j is prime.
+
+(define (range n m)
+  (define (range-helper current max)
+    (if (> current max) nil
+        (cons current (range-helper (+ current 1) max))))
+  (range-helper n m))
+
+(define (flat-map f sequence)
+  (fold-right append nil (map f sequence)))
+
+(define (compose f g)
+  (lambda (x) (f (g x))))
+
+(define (summation series)
+  (fold-right + 0 series))
+
+(define (make-i-range n)
+    (lambda (x) (map (lambda (y) (list y x))
+                     (range (+ x 1) n))))
+
+(define (prime? n)
+  (cond ((< n 2) #f)
+        ((= n 2) #t)
+        (else (every (lambda (x) (= (gcd n x) 1))
+                     (range 2 (+ 1 (floor (sqrt n))))))))
+
+(define (gcd x y)
+  (let ((r (remainder x y)))
+    (if (= r 0) y
+        (gcd y r))))
+
+(define (find-prime-pairs n)
+  (let* ((all-j (range 1 n))
+         (all-pairs (flat-map (make-i-range n) all-j)))
+    (filter (compose prime? summation) all-pairs)))
