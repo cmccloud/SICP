@@ -525,7 +525,7 @@
   (range-helper n m))
 
 (define (flat-map f sequence)
-  (fold-right append nil (map f sequence)))
+  (fold-left append nil (map f sequence)))
 
 (define (compose f g)
   (lambda (x) (f (g x))))
@@ -562,3 +562,13 @@
       (flat-map (lambda (x)
                  (map (prepend x)
                       (permutations (remove-member x set)))) set)))
+
+;; Exercise 2.40
+(define (partial f x)
+  (lambda (y) (f x y)))
+
+(define (unique-pairs n)
+  (flat-map (lambda (i)
+              (map (partial list i)
+                   (range 1 (- i 1))))
+            (range 1 n)))
