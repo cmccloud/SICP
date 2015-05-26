@@ -525,7 +525,7 @@
   (range-helper n m))
 
 (define (flat-map f sequence)
-  (fold-left append nil (map f sequence)))
+  (fold-right append nil (map f sequence)))
 
 (define (compose f g)
   (lambda (x) (f (g x))))
@@ -572,3 +572,13 @@
               (map (partial list i)
                    (range 1 (- i 1))))
             (range 1 n)))
+
+;; Exercise 2.41
+(define (ordered-triples n s)
+  (filter (compose (partial = s) summation)
+          (flat-map (lambda (i)
+                      (flat-map (lambda (j)
+                                  (map (lambda (k) (list i j k))
+                                       (range 1 (- j 1))))
+                                (range 1 (- i 1))))
+                    (range 1 n))))
