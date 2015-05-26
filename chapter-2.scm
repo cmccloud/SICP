@@ -670,10 +670,10 @@
 (define (origin-frame frame)
   (list-ref frame 0))
 
-(define (first-edge frame)
+(define (edge1-frame frame)
   (list-ref frame 1))
 
-(define (second-edge frame)
+(define (edge2-frame frame)
   (list-ref frame 2))
 
 (define (make-frame origin edge1 edge2)
@@ -682,8 +682,24 @@
 (define (origin-frame frame)
   (car frame))
 
-(define (first-edge frame)
+(define (edge1-frame frame)
   (car (cdr frame)))
 
-(define (second-edge frame)
+(define (edge2-frame frame)
   (cdr (cdr frame)))
+
+(define (segments->painter segment-list)
+  (lambda (frame)
+    (for-each (lambda (segment)
+                (draw-line ((frame-coord-map frame)
+                            (start-segment segment))
+                           ((frame-coord-map frame)
+                            (end-segment segment))))
+              segment-list)))
+
+;; Exercise 2.48
+(define (make-segment v1 v2) (cons v1 v2))
+
+(define (start-segment s) (car s))
+
+(define (end-segment s) (cdr s))
