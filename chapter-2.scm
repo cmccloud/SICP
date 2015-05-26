@@ -663,3 +663,27 @@
   (make-vect (* n (xcor-vect x))
              (* n (ycor-vect x))))
 
+;; Exercise 2.47
+(define (make-frame origin edge1 edge2)
+  (list origin edge1 edge2))
+
+(define (origin-frame frame)
+  (list-ref frame 0))
+
+(define (first-edge frame)
+  (list-ref frame 1))
+
+(define (second-edge frame)
+  (list-ref frame 2))
+
+(define (make-frame origin edge1 edge2)
+  (cons origin (cons edge1 edge2)))
+
+(define (origin-frame frame)
+  (car frame))
+
+(define (first-edge frame)
+  (car (cdr frame)))
+
+(define (second-edge frame)
+  (cdr (cdr frame)))
