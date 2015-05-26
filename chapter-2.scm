@@ -544,9 +544,8 @@
                      (range 2 (+ 1 (floor (sqrt n))))))))
 
 (define (gcd x y)
-  (let ((r (remainder x y)))
-    (if (= r 0) y
-        (gcd y r))))
+  (if (= y 0) x
+      (gcd y (remainder x y))))
 
 (define (find-prime-pairs n)
   (let* ((all-j (range 1 n))
@@ -582,3 +581,31 @@
                                        (range 1 (- j 1))))
                                 (range 1 (- i 1))))
                     (range 1 n))))
+
+;; Picture Language Exercise
+;; Notes: Language primitives provided in plt scheme - use Dr. Racket to evaluate code
+(define (flipped-pairs painter)
+  (let ((painter2 (beside painter (flip-vert painter))))
+    (below painter2 painter2)))
+
+(define (right-split painter n)
+  (if (= n 0) painter
+      (let ((smaller (right-split painter (- n 1))))
+        (beside painter (below smaller smaller)))))
+
+;; Exercise 2.44
+(define (up-split painter n)
+  (if (= n 0) painter
+      (let ((smaller (up-split painter (- n 1))))
+        (below painter (beside smaller smaller)))))
+
+(define (corner-split painter n)
+  (if (= n 0) painter
+      (let ((up (up-split painter (- n 1)))
+            (right (right-split painter (- n 1))))
+        (let ((above (beside up up))
+              (side (below right right))
+              (corner (corner-split painter (- n 1))))
+          (let ((top-half (beside above corner))
+                (bottom-half (beside painter side)))
+            (below bottom-half top-half))))))
