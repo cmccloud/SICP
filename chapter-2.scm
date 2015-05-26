@@ -609,3 +609,24 @@
           (let ((top-half (beside above corner))
                 (bottom-half (beside painter side)))
             (below bottom-half top-half))))))
+
+(define (square-limit painter n)
+  (let* ((quarter (corner-split painter n))
+         (half (beside (flip-horiz quarter) quarter)))
+    (below (flip-vert half) half)))
+
+(define (square-of-four tl tr bl br)
+  (lambda (painter)
+    (let ((top (beside (tl painter) (tr painter)))
+          (bottom (beside (bl painter) (br painter))))
+      (below bottom top))))
+
+;; Exercise 2.45
+(define (split f g)
+  (lambda (painter n)
+    (if (= n 0) painter
+        (let ((smaller ((split f g) painter (- n 1))))
+          (f painter (g smaller smaller))))))
+
+(define right-split (split beside below))
+(define up-split (split below beside))
