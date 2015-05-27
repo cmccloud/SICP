@@ -893,13 +893,21 @@
 
 (define (addend s) (cadr s))
 
-(define (augend s) (caddr s))
+(define (augend s)
+  (let ((end (caddr s)))
+    (if (null? (cdr end))
+        end
+        (cons '+ (cddr s))))
 
 (define (product? x) (and (pair? x) (eq? (car x) '*)))
 
 (define (multiplier p) (cadr p))
 
-(define (multiplicand p) (caddr p))
+(define (multiplicand p)
+  (let ((end (caddr p)))
+    (if (null? (cdr end))
+        end
+        (cons '* (cddr p)))))
 
 (define (deriv exp var)
   (cond ((number? exp) 0)
