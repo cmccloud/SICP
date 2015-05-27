@@ -703,3 +703,98 @@
 (define (start-segment s) (car s))
 
 (define (end-segment s) (cdr s))
+
+;; Exercise 2.49
+
+(define outline
+  (segments->painter
+   (list
+   (make-segment
+    (make-vect 0.0 0.0)
+    (make-vect 0.99 0.99))
+   (make-segment
+    (make-vect 0.99 0.0)
+    (make-vect 0.0 0.99)))))
+
+(define x-image
+  (segments->painter
+   (list
+    (make-segment
+     (make-vect 0.0 0.0)
+     (make-vect 0.99 0.99))
+    (make-segment
+     (make-vect 0.99 0.0)
+     (make-vect 0.0 0.99)))))
+
+(define diamond
+  (segments->painter
+   (list
+    (make-segment
+     (make-vect 0.0 0.5)
+     (make-vect 0.5 0.99))
+    (make-segment
+     (make-vect 0.99 0.5)
+     (make-vect 0.5 0.99))
+    (make-segment
+     (make-vect 0.0 0.5)
+     (make-vect 0.5 0.0))
+    (make-segment
+     (make-vect 0.99 0.5)
+     (make-vect 0.5 0.0)))))
+
+(define half-head-segments
+  (list
+   (make-segment
+    (make-vect 0.75 0.99)
+    (make-vect 0.5 0.5))
+   (make-segment
+    (make-vect 0.5 0.5)
+    (make-vect 0.75 0.0))))
+
+(define head
+  (beside
+   (segments->painter half-head-segments)
+   (flip-horiz (segments->painter half-head-segments))))
+
+;; etc.
+
+(define (transform-painter painter origin corner1 corner2)
+  (lambda (frame)
+    (let* ((m (frame-coord-map frame))
+          (new-origin (m origin)))
+      (painter (make-frame new-origin
+                           (sub-vect (m corner1) new-origin)
+                           (sub-vect (m corner2) new-origin))))))
+
+(define (flip-vert painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+
+(define (shrink-to-upper-right painter)
+  (transform-painter painter
+                     (make-vect 0.5 0.5)
+                     (make-vect 1.0 0.5)
+                     (make-vect 0.5 1.0)))
+
+;; Exercise 2.50
+(define (flip-horiz painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+(define (rotate-180 painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+(define (rotate-270 painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 0.0 0.0)
+                     (make-vect 1.0 1.0)))
+
+
