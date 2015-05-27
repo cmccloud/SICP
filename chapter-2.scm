@@ -797,4 +797,41 @@
                      (make-vect 0.0 0.0)
                      (make-vect 1.0 1.0)))
 
+;; Exercise 2.51
+(define (beside painter1 painter2)
+  (let* ((split-point (make-vect 0.5 0.0))
+         (paint-left
+          (transform-painter painter1
+                             (make-vect 0.0 0.0)
+                             split-point
+                             (make-vect 0.0 1.0)))
+         (paint-right
+          (transform-painter painter2
+                             split-point
+                             (make-vect 1.0 0.0)
+                             (make-vect 0.5 1.0))))
+    (lambda (frame)
+      (paint-left frame)
+      (paint-right frame))))
 
+(define (below painter1 painter2)
+  (let* ((split-point (make-vect 0.0 0.5))
+         (paint-bottom
+          (transform-painter painter1
+                             (make-vect 0.0 0.0)
+                             (make-vect 1.0 0.0)
+                             split-point))
+         (paint-top
+          (transform-painter painter2
+                             split-point
+                             (make-vect 1.0 0.5)
+                             (make-vect 0.0 1.0))))
+    (lambda (frame)
+      (paint-bottom frame)
+      (paint-top frame))))
+
+(define (below-with-beside painter1 painter2)
+  (let* ((top (rotate-270 painter2))
+         (bottom (rotate-270 painter1))
+         (rotate-90 (lambda (f) (rotate-270 (rotate-180 f)))))
+    (rotate-90 (beside top bottom))))
