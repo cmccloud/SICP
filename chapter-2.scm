@@ -835,3 +835,12 @@
          (bottom (rotate-270 painter1))
          (rotate-90 (lambda (f) (rotate-270 (rotate-180 f)))))
     (rotate-90 (beside top bottom))))
+
+;; Exercise 2.53
+(list 'a 'b 'c) ;-> (a b c)
+(list (list 'george)) ;-> ((george))
+(cdr '((x1 x2) (y1 y2))) ;-> ((y1 y2))
+(cadr '((x1 x2) (y1 y2))) ;-> (y1 y2)
+(pair? (car '(a short list))) ;-> #f
+(memq 'red '((red shoes) (blue socks))) ;-> #f
+(memq 'red '(red shoes blue socks)) ;-> (red shoes blue socks)
