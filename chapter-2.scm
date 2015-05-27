@@ -855,3 +855,14 @@
          (and (eq? (car list1) (car list2))
               (equal? (cdr list1) (cdr list2))))
         (else #f)))
+
+;; Exercise 2.55
+(car ''abracadabra)
+
+(car '(quote abracadabra))
+
+(car (quote (quote abracadabra)))
+
+(car (list 'quote 'abracadabra)) ; -> quote
+
+(cdr ''abracadabra) ; -> (abracadabra)
