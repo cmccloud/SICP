@@ -1126,3 +1126,159 @@
 
 ;; a. Same Results
 ;; b. No. (tree->list-2 x) grows more slowly
+
+;; Exercise 2.64
+(define (list->tree elements)
+  (define (partial-tree elts n)
+    (if (= n 0) (cons '() elts)
+        (let* ((left-size (quotient (- n 1) 2))
+               (left-result (partial-tree elts left-size))
+               (left-tree (car left-result))
+               (non-left-elts (cdr left-result))
+               (right-size (- n (+ left-size 1)))
+               (this-entry (car non-left-elts))
+               (right-result (partial-tree (cdr non-left-elts) right-size))
+               (right-tree (car right-result))
+               (remaining-elts (cdr right-result)))
+          (cons (make-tree this-entry
+                           left-tree
+                           right-tree)
+                remaining-elts))))
+  (car (partial-tree elements (length elements))))
+
+;; Exercise 2.65
+;; Merge-Sort Helper
+(define (merge-sort sequence)
+
+  (define (left-half sequence)
+    (take sequence (quotient (length sequence) 2)))
+
+  (define (right-half sequence)
+    (define (right-helper sequence n)
+      (if (= n 0) sequence
+          (right-helper (cdr sequence) (- n 1))))
+    (right-helper sequence (quotient (length sequence) 2)))
+
+  (define (merge seq1 seq2)
+    (cond ((and (null? seq1) (null? seq2)) '())
+          ((null? seq1) seq2)
+          ((null? seq2) seq1)
+          (else
+           (let ((x1 (car seq1))
+                 (x2 (car seq2)))
+             (cond ((<= x1 x2)
+                    (cons x1 (merge (cdr seq1) seq2)))
+                   ((< x2 x1)
+                    (cons x2 (merge seq1 (cdr seq2)))))))))
+
+  (if (>= 1 (length sequence)) sequence
+      (merge (merge-sort (left-half sequence))
+             (merge-sort (right-half sequence)))))
+
+(define (list->balanced-tree sequence)
+  (list->tree (merge-sort sequence)))
+
+;; union-set
+(define (union-set set1 set2)
+  (define (union-helper seq1 seq2)
+    (cond ((and (null? seq1) (null? seq2)) '())
+          ((null? seq1) seq2)
+          ((null? seq2) seq1)
+          (else
+           (let ((x1 (car seq1))
+                 (x2 (car seq2)))
+             (cond ((= x1 x2)
+                    (cons x1
+                          (union-helper (cdr seq1) (cdr seq2))))
+                   ((< x1 x2)
+                    (cons x1
+                          (union-helper (cdr seq1) seq2)))
+                   (else
+                    (cons x2 (union-helper seq1 (cdr seq2)))))))))
+  (let ((list1 (tree->list-2 set1))
+        (list2 (tree->list-2 set2)))
+    (list->tree (union-helper list1 list2))))
+
+;; tests
+(define (union-tests)
+  ;; union set should work with empty sets
+  (define (test1)
+    (let* ((set-a (list->tree '()))
+           (set-b (list->tree '()))
+           (set-c (union-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '())))
+  ;; union set should work with duplicate sets
+  (define (test2)
+    (let* ((set-a (list->tree '(1 2 3 4 5)))
+           (set-b (list->tree '(1 2 3 4 5)))
+           (set-c (union-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '(1 2 3 4 5))))
+  ;; union set should work with different sets
+  (define (test3)
+    (let* ((set-a (list->tree '(1 2 3 4 5)))
+           (set-b (list->tree '(6 7 8 9 10)))
+           (set-c (union-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '(1 2 3 4 5 6 7 8 9 10))))
+  ;; union set should work with overlapping sets
+  (define (test4)
+    (let* ((set-a (list->tree '(1 3 5 6 7)))
+           (set-b (list->tree '(2 4 6 8 10)))
+           (set-c (union-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '(1 2 3 4 5 6 7 8 10))))
+  (let ((results (list (test1) (test2) (test3) (test4))))
+    (every (lambda (x) x) results)))
+
+;; intersection-set
+(define (intersection-set set1 set2)
+  (define (intersection-helper list1 list2)
+    (if (or (null? list1) (null? list2))
+        '()
+        (let ((x1 (car list1))
+              (x2 (car list2)))
+          (cond ((= x1 x2)
+                 (cons x1 (intersection-helper (cdr list1) (cdr list2))))
+                ((< x1 x2)
+                 (intersection-helper (cdr list1) list2))
+                ((< x2 x1)
+                 (intersection-helper list1 (cdr list2)))))))
+  (let ((list1 (tree->list-2 set1))
+        (list2 (tree->list-2 set2)))
+    (list->tree (intersection-helper list1 list2))))
+
+;; tests
+
+(define (intersection-tests)
+  ;; intersection should work with empty sets
+  (define (test1)
+    (let* ((set-a (list->tree '()))
+          (set-b (list->tree '()))
+          (set-c (intersection-set set-a set-b))
+          (list-c (tree->list-2 set-c)))
+      (equal? list-c '())))
+  ;; intersection should work with duplicate sets
+  (define (test2)
+    (let* ((set-a (list->tree '(1 2 3 4 5)))
+           (set-b (list->tree '(1 2 3 4 5)))
+           (set-c (intersection-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '(1 2 3 4 5))))
+  ;; intersection should work with different sets
+  (define (test3)
+    (let* ((set-a (list->tree '(1 2 3)))
+           (set-b (list->tree '(4 5 6)))
+           (set-c (intersection-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '())))
+  ;; intersection should work with overlapping sets
+  (define (test4)
+    (let* ((set-a (list->tree '(1 2 3 4 5 11 13)))
+           (set-b (list->tree '(2 3 7 9 11)))
+           (set-c (intersection-set set-a set-b))
+           (list-c (tree->list-2 set-c)))
+      (equal? list-c '(2 3 11))))
+  (let ((results (list (test1) (test2) (test3) (test4))))
+    (every (lambda (x) x) results)))
