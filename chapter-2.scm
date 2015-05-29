@@ -1250,7 +1250,6 @@
     (list->tree (intersection-helper list1 list2))))
 
 ;; tests
-
 (define (intersection-tests)
   ;; intersection should work with empty sets
   (define (test1)
@@ -1282,3 +1281,20 @@
       (equal? list-c '(2 3 11))))
   (let ((results (list (test1) (test2) (test3) (test4))))
     (every (lambda (x) x) results)))
+
+;; Sets and information retrieval
+(define (lookup given-key set-of-records)
+  (cond ((null? set-of-records) false)
+        ((equal? given-key (key (car set-of-records)))
+         (car set-of-records))
+        (else (lookup given-key (cdr set-of-records)))))
+
+;; Exercise 2.66
+(define (lookup given-key set-of-records)
+  (cond ((null? set-of-records) false)
+        (else
+         (let ((entry-key (key (entry set-of-records))))
+           (cond ((= entry-key given-key) (entry set-of-records))
+                 ((< given-key entry-key)
+                  (lookup given-key (left-branch set-of-records)))
+                 (else (lookup given-key (right-branch set-of-records))))))))
