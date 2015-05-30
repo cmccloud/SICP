@@ -1376,3 +1376,37 @@
 
 (decode sample-message sample-tree) ;-> (a d a b b c a)
 
+;; Exercise 2.68
+(define (encode message tree)
+  (if (null? message)
+      '()
+      (append (encode-symbol (car message) tree)
+              (encode (cdr message) tree))))
+
+(define (contains? x seq)
+  (cond ((null? seq) #f)
+        ((eq? x (car seq)) #t)
+        (else (contains? x (cdr seq)))))
+
+(define (encode-symbol symbol tree)
+  (let ((left (left-branch tree))
+        (right (right-branch tree)))
+    (cond ((contains? symbol (symbols left))
+           (if (leaf? left) (list 0)
+               (cons 0 (encode-symbol symbol left))))
+          ((contains? symbol (symbols right))
+           (if (leaf? right) (list 1)
+               (cons 1 (encode-symbol symbol right))))
+          (else (error ("Symbol not found: ENCODE SYMBOL" symbol tree))))))
+
+;; tests
+(define (encode-test)
+  (define sample-tree
+    (make-code-tree (make-leaf 'A 4)
+                    (make-code-tree
+                     (make-leaf 'B 2)
+                     (make-code-tree (make-leaf 'D 1)
+                                     (make-leaf 'C 1)))))
+  (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+  (let ((decoded (decode sample-message sample-tree)))
+    (equal? sample-message (encode decoded sample-tree))))
