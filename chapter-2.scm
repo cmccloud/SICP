@@ -1788,14 +1788,12 @@
     (filter record? results)))
 
 ;; d. All division will be responsible for creation of a package which behaves something like
-;; the one below
+;; the one below. Additionally they will be responsible for tagging their division files:
+;; (tag (cons 'division-file division-id) division-file)
 (define (sample-division-package)
   ;; internal procedures
-  (define division-id '34)
   (define (employee-name record)
     (list-ref record 3))
-  (define (tag x y) (cons x y))
-
   (define (get-employee-info employees name)
     (if (null? employees)
         '()
@@ -1807,6 +1805,8 @@
     (list-ref 5 record))
 
   ;; interface to rest of system
+  (define division-id '34)
+  (define (tag x y) (cons x y))
   (put 'division-file division-id (tag (cons 'division-file division-id) our-division-file))
   (put 'get-record division-id
        (lambda (name)
