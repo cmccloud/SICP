@@ -1668,6 +1668,12 @@
 ;; b.
 (define (install-sum-deriv-package)
   ;; internal procedures
+  (define (make-sum a1 a2)
+    (cond ((=number? a1 0) a2)
+          ((=number? a2 0) a1)
+          ((and (number? a1) (number? a2))
+           (+ a1 a2))
+          (else (list a1 '+ a2))))
   (define (addend x) (car x))
   (define (augend x) (cadr x))
   (define (deriv operands var)
@@ -1675,11 +1681,22 @@
               (deriv (augend operands) var)))
 
   ;; interface to rest of system
+  (put 'make-sum '(+) make-sum)
   (put 'deriv '(+) deriv)
   'done)
 
 (define (install-product-deriv-package)
+  ;; handle dependencies
+  (if (get 'make-sum '+) 'done (install-sum-deriv-package))
+
   ;; internal procedures
+  (define make-sum (get 'make-sum '+))
+  (define (make-product m1 m2)
+    (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+          ((=number? m1 1) m2)
+          ((=number? m2 1) m1)
+          ((and (number? m1) (number? m2)) (* m1 m2))
+          (else (list m1 '* m2))))
   (define (multiplier x) (car x))
   (define (multiplicand x) (cadr x))
   (define (deriv operands var)
@@ -1691,12 +1708,24 @@
                (multiplicand operands))))
 
   ;; interface to rest of system
+  (put 'make-product '(*) make-product)
   (put 'deriv '(*) deriv)
   'done)
 
 ;; c.
 (define (install-exp-deriv-package)
+  ;; handle dependencies
+  (if (get 'make-sum '+) 'done (install-sum-deriv-package))
+  (if (get 'make-product '*) 'done (install-product-deriv-package))
+
   ;; internal procedures
+  (define make-sum (get 'make-sum '+))
+  (define make-product (get 'make-product '*))
+  (define (make-exponentiation base exp)
+    (cond ((= exp 0) 1)
+          ((= exp 1) base)
+          ((and (number? base) (number? exp)) (expt base exponent))
+          (else (list '** base exp))))
   (define (base x) (car x))
   (define (exponent x) (cadr x))
   (define (deriv operands var)
@@ -1707,6 +1736,7 @@
      (deriv (base operands) var)))
 
   ;; interface to rest of system
+  (put 'make-exponentiation '(**) make-exponentiation)
   (put 'deriv '(**) deriv)
   'done)
 
