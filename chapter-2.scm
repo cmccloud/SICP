@@ -318,7 +318,9 @@
   (map square items))
 
 ;; Exercise 2.22
-;; In the first case Louis doesn't recognize that lists build onto the front and our iterative process starts from the front as well - he's using a queue like structure for storage when what he wants is a stack (i.e. the call stack)
+;; In the first case Louis doesn't recognize that lists build onto the front and our
+;; iterative process starts from the front as well - he's using a queue like structure
+;; for storage when what he wants is a stack (i.e. the call stack)
 ;; In the second case Louis is trying to conjoin nil which is terminating the list
 
 ;; Exercise 2.23
@@ -516,7 +518,8 @@
   (fold-left (lambda (x y) (cons y x)) nil sequence))
 
 ;; Nested Mapping problem
-;; Given some positive integer n, find all ordered pairs of distinct positive integers (i, j) such that 1 <= j < i <= n and i + j is prime.
+;; Given some positive integer n, find all ordered pairs of distinct positive integers (i, j)
+;; such that 1 <= j < i <= n and i + j is prime.
 
 (define (range n m)
   (define (range-helper current max)
@@ -1425,14 +1428,19 @@
         (cddr leaves)))))
 
 ;; Exercise 2.70
-(define alphabet '((A 2) (GET 2) (SHA 3) (WAH 1) (BOOM 1) (JOB 2) (NA 16) (YIP 9)))
+(define alphabet '((A 2) (GET 2) (SHA 3) (WAH 1)
+                   (BOOM 1) (JOB 2) (NA 16) (YIP 9)))
+
 (define my-tree (generate-huffman-tree alphabet))
-(define my-message '(get a job sha na na na na na na na na get a job sha na na na na na na na na na wah yip yip yip yip yip yip yip yip sha boom))
+
+(define my-message '(get a job sha na na na na na na na na get a job sha na na
+                         na na na na na na na wah yip yip yip yip yip yip yip yip
+                         sha boom))
 (define my-encoding (encode my-message my-tree))
 ;; How many bits are required for encoding?
 (length my-encoding)
-;; What is the smallest number of bits that would be needed to encode this song if we used
-;; a fixed-length code for the eight-symbol alphabet?
+;; What is the smallest number of bits that would be needed to encode this song
+;; if we used a fixed-length code for the eight-symbol alphabet?
 (* (length my-message) 3)
 
 ;; Exercise 2.71
@@ -1447,3 +1455,6 @@
 ;; Most Frequent = 1
 ;; Least Frequent = N - 1
 
+;; Exercise 2.72
+
+;; Multiple Representations for Abstract Data
