@@ -1434,3 +1434,16 @@
 ;; What is the smallest number of bits that would be needed to encode this song if we used
 ;; a fixed-length code for the eight-symbol alphabet?
 (* (length my-message) 3)
+
+;; Exercise 2.71
+(define (make-n-alphabet n)
+  (map (lambda (x) (list x (expt 2 x))) (range 1 n)))
+
+(define alphabet-5 (make-n-alphabet 5))
+(define tree-5 (generate-huffman-tree alphabet-5))
+
+(define alphabet-10 (make-n-alphabet 10))
+(define tree-10 (generate-huffman-tree alphabet-10))
+;; Most Frequent = 1
+;; Least Frequent = N - 1
+
