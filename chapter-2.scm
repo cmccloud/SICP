@@ -1744,3 +1744,72 @@
 ;; in install exp: (put 'deriv '(**) deriv) -> (put '(**) 'deriv deriv)
 ;; in install product: (put 'deriv '(*) deriv) -> (put '(*) 'deriv deriv)
 ;; in install sum: (put 'deriv '(+) deriv) -> (put '(+) 'deriv deriv)
+
+;; Exercise 2.74
+;; Generic Procedures
+;; a.
+;; division files should be placed into a list or cons cell, with a division identifier
+;; in the form of a tagged pair in the first position, and file information in the second position.
+;; The tag should have the form ('division-file id) where id is the unique division identifier in
+;; form of a symbol.
+;; Divisions must implement and introduce to the dispatch table a procedure 'get-record
+;; indexed to their division-identifier which, when given an employee name
+;; returns that employee record
+(define (tag x) (car x))
+(define (division-file? x) (and (pair? (tag x)) (eq? (car (tag x)) 'division-file)))
+(define (division-identifier x) (cadr (tag x)))
+(define (file-information x) (cdr x))
+(define (get-record file name)
+  (let* ((id (division-identifier file))
+        (proc (get 'get-record id)))
+    (if proc
+        (proc name)
+        (error "Unknown procedure: GET-RECORD" file))))
+
+;; b.
+(define (record? x) (and (pair? x) (eq? (tag x) 'record)))
+(define (record-contents record) (cdr record))
+(define (get-salary file name)
+  (let* ((record (get-record file name))
+         (id (division-identifier file))
+         (proc (get 'get-salary id)))
+    (if proc
+        (proc (record-contents record))
+        (error "Unkonwn procedure: GET-SALARY" file))))
+;; employee records should be placed into a list or cons cell, with a tag 'record placed into
+;; the first position and record information in the second position
+;; Divisions must implemented and introduce to the dispatch table a procedure 'get-salary
+;; indexed to their division-identifier which, when given an employee record, retrives from
+;; that record the employee's salary.
+
+;; c.
+(define (find-employee-record files name)
+  (let ((results (map (lambda (file) (get-record file name))) files))
+    (filter record? results)))
+
+;; d. All division will be responsible for creation of a package which behaves something like
+;; the one below
+(define (sample-division-package)
+  ;; internal procedures
+  (define division-id '34)
+  (define (employee-name record)
+    (list-ref record 3))
+  (define (tag x y) (cons x y))
+
+  (define (get-employee-info employees name)
+    (if (null? employees)
+        '()
+        (let ((record (car employees)))
+          (if (eq? (employee-name record) name)
+              record
+              (get-employee-info (cdr employees) name)))))
+  (define (get-employee-salary record)
+    (list-ref 5 record))
+
+  ;; interface to rest of system
+  (put 'division-file division-id (tag (cons 'division-file division-id) our-division-file))
+  (put 'get-record division-id
+       (lambda (name)
+         (tag 'record (get-employee-info master-personnel-file name))))
+  (put 'get-salary division-id get-employee-salary)
+  'done)
