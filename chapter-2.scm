@@ -1410,3 +1410,16 @@
   (define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
   (let ((decoded (decode sample-message sample-tree)))
     (equal? sample-message (encode decoded sample-tree))))
+
+;; Exercise 2.69
+(define (generate-huffman-tree pairs)
+  (successive-merge (make-leaf-set pairs)))
+
+(define (successive-merge leaves)
+  (if (= (length leaves) 1)
+      (car leaves)
+      (successive-merge
+       (adjoin-set
+        (make-code-tree (car leaves)
+                        (cadr leaves))
+        (cddr leaves)))))
