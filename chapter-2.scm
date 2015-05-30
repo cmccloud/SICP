@@ -1423,3 +1423,14 @@
         (make-code-tree (car leaves)
                         (cadr leaves))
         (cddr leaves)))))
+
+;; Exercise 2.70
+(define alphabet '((A 2) (GET 2) (SHA 3) (WAH 1) (BOOM 1) (JOB 2) (NA 16) (YIP 9)))
+(define my-tree (generate-huffman-tree alphabet))
+(define my-message '(get a job sha na na na na na na na na get a job sha na na na na na na na na na wah yip yip yip yip yip yip yip yip sha boom))
+(define my-encoding (encode my-message my-tree))
+;; How many bits are required for encoding?
+(length my-encoding)
+;; What is the smallest number of bits that would be needed to encode this song if we used
+;; a fixed-length code for the eight-symbol alphabet?
+(* (length my-message) 3)
