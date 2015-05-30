@@ -1837,3 +1837,21 @@
           ((eq? op 'imag-part)
            (* r (sin a)))
           (else (error "Unknown op: MAKE-FROM-MAG-ANG" op)))))
+
+;; Exercise 2.76
+;; Generic operations with explicit dispatch:
+;; - Adding types requires that operations be updated to handle the new type
+;; - Adding operations requires nothing other than accounting for the existing types,
+
+;; Data directed style:
+;; - Adding types requires the creation of new operations for the type to be placed
+;; into the dispatch table, or aliasing existing operations with the new type
+;; - Adding operations requires the association of said operation with relevant types,
+;; and ensuring that no previously defined operations are overridden.
+
+;; Message passing style:
+;; - Adding types requires the creation of a new dispatch object
+;; - Adding operations requires updating existing dispatch objects with the new operation
+
+;; Everything else being equal, in a system in which new operations must often be added,
+;; either generic operations or a data directed style would likely be effective.
