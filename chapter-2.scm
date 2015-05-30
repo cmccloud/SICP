@@ -1813,3 +1813,27 @@
          (tag 'record (get-employee-info master-personnel-file name))))
   (put 'get-salary division-id get-employee-salary)
   'done)
+
+;; Message Passing
+;; Dispatch on operation name
+(define (make-from-real-imag x y)
+  (lambda (op)
+    (cond ((eq? op 'real-part) x)
+          ((eq? op 'imag-part) y)
+          ((eq? op 'magnitude)
+           (sqrt (+ (square x) (square y))))
+          ((eq? op 'angle) (atan y x))
+          (else (error "Unknown op: MAKE-FROM-REAL-IMAG" op)))))
+
+(define (apply-generic op arg) (arg op))
+
+;; Exercise 2.75
+(define (make-from-mag-ang r a)
+  (lambda (op)
+    (cond ((eq? op 'magnitude) r)
+          ((eq? op 'angle) a)
+          ((eq? op 'real-part)
+           (* r (cos a)))
+          ((eq? op 'imag-part)
+           (* r (sin a)))
+          (else (error "Unknown op: MAKE-FROM-MAG-ANG" op)))))
