@@ -2136,8 +2136,7 @@
     (error "No method for these types"
            (list op (map type-tag seq))))
   (define (try-coercion op tries args)
-    (if (null? tries)
-        (done op args)
+    (if (null? tries) (done op args)
         (let* ((attempt (map (lambda (x) (coerce x (car tries))) args))
                (valid (every (lambda (x) (not (eq? x #f))) attempt)))
           (if valid (apply apply-generic (cons op attempt))
@@ -2152,3 +2151,33 @@
 ;; given two types, a, b, neither of which may coerce to each other
 ;; our procedure fails, but there might exist another type c, to which both a
 ;; and b may be coerced
+
+;; Exercise 2.83
+(define tower '(integer rational real complex))
+
+(define (index-of symbol seq)
+  (cond ((null? seq) '())
+        ((eq? symbol (car seq)) 0)
+        (else (+ 1 (index-of symbol (cdr seq))))))
+
+(define (lower-than? x y)
+  ;; returns #t if x is earlier in the tower than y
+  ;; #f otherwise
+  (let ((x-index (index-of x tower))
+        (y-index (index-of y tower)))
+    (cond ((or (null? x-index) (null? y-index)) #f)
+          ((< x y) #t)
+          (else #f))))
+
+(define (raise-once x)
+  (let* ((x-type (type-tag x))
+         (position (index-of x-type tower)))
+    (if (= position (length tower)) x
+        (let* ((next-type (list-ref tower (+ position 1)))
+              (proc (get-coercion x-type next-type)))
+          (if proc (proc x)
+              (error "May not convert" x-type next-type))))))
+
+(define (raise x target)
+  (if (eq? (type-tag x) target) x
+      (raise (raise-once x) target)))
