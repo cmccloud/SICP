@@ -1974,7 +1974,7 @@
   ((get 'make-from-real-imag 'complex) x y))
 
 (define (make-complex-from-mag-ang r a)
-  ((get 'make-from-mag'ang 'complex) r a))
+  ((get 'make-from-mag-ang 'complex) r a))
 
 ;; Exercise 2.77
 ;; (define a-complex-number (make-complex-from-real-imag 3 4))
@@ -1997,3 +1997,48 @@
 ;; (sqrt (+ (square (real-part-rectangular '(3 4)))
 ;;           (square (imag-part-rectangular '(3 4)))))
 ;; Produces the result
+
+;; Exercise 2.78
+(define (type-tag datum)
+  (cond ((or (symbol? datum) (number? datum)) 'scheme-number)
+        ((pair? datum) (car datum))
+        (else (error "Bad tagged datum: TYPE-TAG" datum))))
+
+(define (contents datum)
+  (cond ((or (symbol? datum) (number? datum)) datum)
+        ((pair? datum) (cdr datum))
+        (else (error "Bad tagged datum: CONTENTS" datum))))
+
+(define (attach-tag type-tag contents)
+  (if (eq? type-tag 'scheme-number)
+      contents
+      (cons type-tag contents)))
+
+;; Exercise 2.79
+;; in global namespace - or generic arithmetic package
+(define (equ? x y)
+  (apply-generics 'equ x y))
+;; within ordinary numbers package
+(put 'equ? '(scheme-number scheme-number) =)
+;; within rational numbers package
+(define (equ?? x y)
+  (= (* (number x) (denom y)) (* (numer y) (denom x))))
+(put 'equ? '(rational rational) equ?)
+;; within complex numbers package
+(define (equ?? x y)
+  (and (= (real-part x) (real-part y))
+       (= (imag-part x) (imag-part y))))
+(put 'equ? '(complex complex) equ?)
+
+;; Exercise 2.80
+;; in global namespace - or generic arithmetic package
+(define (=zero? x) (apply-generics '=zero? x))
+;; within oridinary numbers package
+(define (=zero? x) (= x 0))
+(put '=zero? '(scheme-number) =zero?)
+;; within rational numbers package
+(define (=zero? x) (= (numer x) 0))
+(put '=zero? '(rational) =zero?)
+;; within complex numbers package
+(define (=zero? x) (= (magnitude x) 0))
+(put '=zero? '(complex) =zero?)
