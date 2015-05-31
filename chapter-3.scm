@@ -80,3 +80,61 @@
         ;; on a bad request, the balance of the account shouldn't change
         ((not (= 80 ((account 'secret 'withdraw) 0))) #f)
         (else #t)))
+
+;; Exercise 3.4
+(define (make-account balance password)
+  ;; internal state
+  (let ((attempts 0))
+    ;; procedures
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount))
+                 balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    ;; route-handler for incoming requests
+    (define (router m)
+      ;; resets attempts on successful login
+      (set! attempts 0)
+      (cond ((eq? m 'withdraw) withdraw)
+            ((eq? m 'deposit) deposit)
+            (else "Unknown Procedure MAKE-ACCOUNT" m)))
+    ;; denial procedures
+    (define (deny .x) "Incorrect password")
+    (define (call-cops .x) "Calling Police!")
+    ;; denial router
+    (define (deny-handler)
+      (set! attempts (+ attempts 1))
+      (if (>= attempts 7)
+          call-cops
+          deny))
+    ;; authentication module
+    (define (auth p m)
+      (if (eq? p password)
+          (router m)
+          (deny-handler)))
+    auth))
+
+;; tests
+(define (test3-4)
+  (define account (make-account 100 'secret))
+  ;; make-account should still pass old tests
+  (cond ((not (test3-3)) "Error - Did not pass test 3-3")
+        ;; make-account should throw 6 errors and then call cops
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+        ((not (equal? ((account 'thief 'withdraw) 100) "Incorrect password"))
+         "Error - Expected 'Incorrect Password")
+         ((not (equal? ((account 'thief 'withdraw) 100) "Calling Police!"))
+         "Error - Expected 'Calling Police!'")
+        (else #t)))
