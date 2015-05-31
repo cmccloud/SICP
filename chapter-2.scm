@@ -1748,15 +1748,18 @@
 ;; Exercise 2.74
 ;; Generic Procedures
 ;; a.
-;; division files should be placed into a list or cons cell, with a division identifier
-;; in the form of a tagged pair in the first position, and file information in the second position.
-;; The tag should have the form ('division-file id) where id is the unique division identifier in
-;; form of a symbol.
-;; Divisions must implement and introduce to the dispatch table a procedure 'get-record
-;; indexed to their division-identifier which, when given an employee name
-;; returns that employee record
+;; division files should be placed into a list or cons cell, with a division
+;; identifier in the form of a tagged pair in the first position, and file
+;; information in the second position. The tag should have the form
+;; ('division-file id) where id is the unique division identifier in form of
+;; a symbol. Divisions must implement and introduce to the dispatch table a
+;; procedure 'get-record indexed to their division-identifier which, when given
+;; an employee name returns that employee record
+
 (define (tag x) (car x))
-(define (division-file? x) (and (pair? (tag x)) (eq? (car (tag x)) 'division-file)))
+(define (division-file? x)
+  (and (pair? (tag x))
+       (eq? (car (tag x)) 'division-file)))
 (define (division-identifier x) (cadr (tag x)))
 (define (file-information x) (cdr x))
 (define (get-record file name)
@@ -1776,20 +1779,22 @@
     (if proc
         (proc (record-contents record))
         (error "Unkonwn procedure: GET-SALARY" file))))
-;; employee records should be placed into a list or cons cell, with a tag 'record placed into
-;; the first position and record information in the second position
-;; Divisions must implemented and introduce to the dispatch table a procedure 'get-salary
-;; indexed to their division-identifier which, when given an employee record, retrives from
-;; that record the employee's salary.
+;; employee records should be placed into a list or cons cell, with a tag 'record
+;; placed into the first position and record information in the second position.
+;; Divisions must implemented and introduce to the dispatch table a procedure
+;; 'get-salary indexed to their division-identifier which, when given an employee
+;; record, retrives from that record the employee's salary.
 
 ;; c.
 (define (find-employee-record files name)
   (let ((results (map (lambda (file) (get-record file name))) files))
     (filter record? results)))
 
-;; d. All division will be responsible for creation of a package which behaves something like
-;; the one below. Additionally they will be responsible for tagging their division files:
+;; d. All division will be responsible for creation of a package which behaves
+;; something like the one below. Additionally they will be responsible for
+;; tagging their division files:
 ;; (tag (cons 'division-file division-id) division-file)
+
 (define (sample-division-package)
   ;; internal procedures
   (define (employee-name record)
@@ -1807,7 +1812,8 @@
   ;; interface to rest of system
   (define division-id '34)
   (define (tag x y) (cons x y))
-  (put 'division-file division-id (tag (cons 'division-file division-id) our-division-file))
+  (put 'division-file division-id
+       (tag (cons 'division-file division-id) our-division-file))
   (put 'get-record division-id
        (lambda (name)
          (tag 'record (get-employee-info master-personnel-file name))))
@@ -1841,21 +1847,25 @@
 ;; Exercise 2.76
 ;; Generic operations with explicit dispatch:
 ;; - Adding types requires that operations be updated to handle the new type
-;; - Adding operations requires nothing other than accounting for the existing types.
+;; - Adding operations requires nothing other than accounting for the existing
+;; types.
 
 ;; Data directed style:
-;; - Adding types requires the creation of new operations for the type to be placed
-;; into the dispatch table, or aliasing existing operations with the new type
-;; - Adding operations requires the association of said operation with relevant types,
-;; and ensuring that no previously defined operations are overridden.
+;; - Adding types requires the creation of new operations for the type to be
+;; placed into the dispatch table, or aliasing existing operations with the new
+;; type
+;; - Adding operations requires the association of said operation with relevant
+;; types, and ensuring that no previously defined operations are overridden.
 
 ;; Message passing style:
 ;; - Adding types requires the creation of a new dispatch object
-;; - Adding operations requires updating existing dispatch objects with the new operation
+;; - Adding operations requires updating existing dispatch objects with the new
+;; operation
 
-;; Everything else being equal, in a system in which new operations must often be added,
-;; either generic operations or a data directed style would likely be effective. In a system
-;; in which there exist few types, the advantages of generic operations would be greatest.
+;; Everything else being equal, in a system in which new operations must often
+;; be added, either generic operations or a data directed style would likely be
+;; effective. In a system in which there exist few types, the advantages of
+;; generic operations would be greatest.
 
 
 ;; Systems with Generic Operations
@@ -2073,10 +2083,11 @@
                    (list op type-tags))))))
 
 ;; Exercise 2.81
-;; a. With Louis's changes to apply-generic, calling exp with two complex numbers would
-;; result in an infinite loop.
-;; b. Louis is correct, in a sense. Apply-generic should guard against the possibility that a programmer
-;; introduces a type coercion which hangs the system.
+;; a. With Louis's changes to apply-generic, calling exp with two complex
+;; numbers would result in an infinite loop.
+;; b. Louis is correct, in a sense. Apply-generic should guard against the
+;; possibility that a programmer introduces a type coercion which hangs the
+;; system.
 ;; c.
 (define (apply-generic op . args)
   ;; internal procedures
@@ -2113,7 +2124,7 @@
   (define (coerce x y)
     (let* ((x-type (type-tag x))
            (y-type (type-tag y))
-           (proc (get-coercion x-type y-type)))
+           (proc (get-coercion y-type x-type)))
       (cond ((eq? x-type y-type) y)
             (proc (proc y))
             (else #f))))
@@ -2129,4 +2140,8 @@
     (if proc (apply proc (map contents args))
         (try-coercion op args args))))
 
-
+;; Give an example of a situation where the above procedure is not sufficiently
+;; general:
+;; given two types, a, b, neither of which may coerce to each other
+;; our procedure fails, but there might exist another type c, to which both a
+;; and b may be coerced
