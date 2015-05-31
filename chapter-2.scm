@@ -2152,32 +2152,33 @@
 ;; our procedure fails, but there might exist another type c, to which both a
 ;; and b may be coerced
 
-;; Exercise 2.83
-(define tower '(integer rational real complex))
+;; Exercise 2.83 - TODO
+(define (install-raise-package)
+  ;; internal procedures
+  (define (integer->rational n)
+    (make-rational n 1))
+  (define (rational->complex n)
+    (make-complex (/ (cadr n) (caddr n))
+                  0))
 
-(define (index-of symbol seq)
-  (cond ((null? seq) '())
-        ((eq? symbol (car seq)) 0)
-        (else (+ 1 (index-of symbol (cdr seq))))))
+  ;;interface to rest of system
+  (put 'raise '(scheme-number) integer->rational)
+  (put 'raise '(rational) rational->complex)
+  'done)
 
-(define (lower-than? x y)
-  ;; returns #t if x is earlier in the tower than y
-  ;; #f otherwise
-  (let ((x-index (index-of x tower))
-        (y-index (index-of y tower)))
-    (cond ((or (null? x-index) (null? y-index)) #f)
-          ((< x y) #t)
-          (else #f))))
+(define (raise n) (apply-generics 'raise n))
 
-(define (raise-once x)
-  (let* ((x-type (type-tag x))
-         (position (index-of x-type tower)))
-    (if (= position (length tower)) x
-        (let* ((next-type (list-ref tower (+ position 1)))
-              (proc (get-coercion x-type next-type)))
-          (if proc (proc x)
-              (error "May not convert" x-type next-type))))))
+;; Exercise 2.84 - TODO
+;; Exercise 2.85 - TODO
+;; Exercise 2.86 - TODO
 
-(define (raise x target)
-  (if (eq? (type-tag x) target) x
-      (raise (raise-once x) target)))
+;; Symbolic Algebra System - TODO
+;; Exercise 2.87 - TODO
+;; Exercise 2.88 - TODO
+;; Exercise 2.89 - TODO
+;; Exercise 2.90 - TODO
+;; Exercise 2.91 - TODO
+;; Exercise 2.92 - TODO
+;; Exercise 2.93 - TODO
+;; Exercise 2.94 - TODO
+;; Exercise 2.95 - TODO
