@@ -2099,7 +2099,7 @@
             (else (error "No method for these types"
                          (list op tags))))))
   ;; procedure body
-  (let* ((type-tag (map type-tag args))
+  (let* ((type-tags (map type-tag args))
          (proc (get op type-tags)))
     (cond (proc (apply proc (map contents args)))
           ((and (valid-length args)
@@ -2107,5 +2107,26 @@
            (try-coercion type-tag op args))
           (else (error "No method for these types"
                        (list op type-tags))))))
+
+;; Exercise 2.82
+(define (apply-generic op . args)
+  (define (coerce x y)
+    (let* ((x-type (type-tag x))
+           (y-type (type-tag y))
+           (proc (get-coercion x-type y-type)))
+      (cond ((eq? x-type y-type) y)
+            (proc (proc y))
+            (else #f))))
+  (define (try-coercion op tries args)
+    (if (null? tries)
+        (error "No method for these types"
+               (list op (map type-tags args)))
+        (let* ((attempt (map (partial coerce (car tries)) args))
+               (valid (every (lambda (x) (not (eq? x #f))) attempt)))
+          (if valid (apply apply-generic (cons op attempt))
+              (try-coercion op (cdr tries) args)))))
+  (let ((proc (get op (map type-tag args))))
+    (if proc (apply proc (map contents args))
+        (try-coercion op args args))))
 
 
