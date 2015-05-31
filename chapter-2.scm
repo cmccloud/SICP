@@ -2128,22 +2128,24 @@
       (cond ((eq? x-type y-type) x)
             (proc (proc x))
             (else #f))))
-  (define (same-type args)
-    (let* ((tags (map type-tag args))
+  (define (same-type? seq)
+    (let* ((tags (map type-tag seq))
            (first (car tags)))
       (every (lambda (x) (eq? x first)) tags)))
+  (define (done op seq)
+    (error "No method for these types"
+           (list op (map type-tag seq))))
   (define (try-coercion op tries args)
-    (if (or (null? tries)
-            (same-type args))
-        (error "No method for these types"
-               (list op (map type-tags args)))
+    (if (null? tries)
+        (done op args)
         (let* ((attempt (map (lambda (x) (coerce x (car tries))) args))
                (valid (every (lambda (x) (not (eq? x #f))) attempt)))
           (if valid (apply apply-generic (cons op attempt))
               (try-coercion op (cdr tries) args)))))
   (let ((proc (get op (map type-tag args))))
-    (if proc (apply proc (map contents args))
-        (try-coercion op args args))))
+    (cond (proc (apply proc (map contents args)))
+          ((same-type? args) (done op args))
+          (else (try-coercion op args args)))))
 
 ;; Give an example of a situation where the above procedure is not sufficiently
 ;; general:
