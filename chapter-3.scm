@@ -137,4 +137,9 @@
          "Error - Expected 'Incorrect Password")
          ((not (equal? ((account 'thief 'withdraw) 100) "Calling Police!"))
          "Error - Expected 'Calling Police!'")
+         ;; make-account should reset attempt counter on successful login
+         ((not (= ((account 'secret 'withdraw) 40) 60))
+          "Error - Expected balance of 60")
+         ((not (equal? ((account 'thief 'withdraw) 40) "Incorrect password"))
+          "Error - succesfull login should have reset attempt counter")
         (else #t)))
