@@ -42,3 +42,41 @@
          (count-four (m-inc 'how-many-calls?)))
     (equal? '(1 2 5 3 4 4)
             (list one two five count-three four count-four))))
+
+;; Exercise 3.3
+(define (make-account balance password)
+  ;; internal procedures
+  (define (withdraw amount)
+    (if (>= balance amount)
+        (begin (set! balance (- balance amount))
+               balance)
+        "Insufficient funds"))
+  (define (deposit amount)
+    (set! balance (+ balance amount))
+    balance)
+  ;; route-handler for incoming requests
+  (define (router m)
+    (cond ((eq? m 'withdraw) withdraw)
+          ((eq? m 'deposit) deposit)
+          (else "Unknown Procedure MAKE-ACCOUNT" m)))
+  ;; handles unauthorized requests
+  (define (deny .x) "Incorrect password")
+  ;; authentication module
+  (define (auth p m)
+    (if (eq? p password)
+        (router m)
+        deny))
+  auth)
+
+;; tests
+(define (test3-3)
+  (define account (make-account 100 'secret))
+  ;; make-account should work if the user supplies the correct password
+  (cond ((not (= 40 ((account 'secret 'withdraw) 60))) #f)
+        ((not (= 80 ((account 'secret 'deposit) 40))) #f)
+        ;; make-account should respond with a message, even if the user
+        ;; supplies an additional argument
+        ((not (equal? ((account 'oops 'withdraw) 80) "Incorrect password")) #f)
+        ;; on a bad request, the balance of the account shouldn't change
+        ((not (= 80 ((account 'secret 'withdraw) 0))) #f)
+        (else #t)))
