@@ -211,8 +211,8 @@
 ;; Exercise 3.7
 
 ;; The only internal change we have to make to make-account
-;; is the introduction of a new router called 'authorized? which
-;; always returns 'authorized
+;; is the introduction of a new route called 'authorized? which
+;; always returns 'authorized.
 (define (make-account balance password)
   ;; internal state
   (let ((attempts 0))
@@ -225,7 +225,7 @@
     (define (deposit amount)
       (set! balance (+ balance amount))
       balance)
-    ;; route-handler for incoming requests
+    ;; route-handler for authorized requests
     (define (router m)
       ;; resets attempts on successful login
       (set! attempts 0)
@@ -297,3 +297,73 @@
   (define b (y 0))
   (and (= (+ a (x 0)) 1)
        (= (+ b (y 1)) 0)))
+
+;; The Environmental Model of Evaluation
+
+;; The environment model of procedure application can be summarized:
+;; A procedure object is applied to a set of arguments by constructing a
+;; frame, binding the formal parameters of the procedure to the arguments of
+;; the call, and then evaluating the body of the procedure in the context of
+;; the new environment constructed. The new frame has as it's enclosing
+;; environment the environment part of the procedure object being applied.
+
+;; A procedure is created by evaluating a lambda expression relative to a
+;; given environment. The resulting procedure object is a pair consisting of
+;; the text of the lambda expression and a pointer to the environment in which
+;; the procedure was created.
+
+;; Exercise 3.9
+(define (factorial n)
+  (if (= n 1) 1 (* n (factorial (- n 1)))))
+
+(define (fact-iter product counter max)
+  (if (> counter max-count)
+      product
+      (fact-iter (* counter product)
+                 (+ counter 1)
+                 max-count)))
+
+(define (factorial n) (fact-iter 1 1 n))
+
+;; Recursive Version
+;; (factorial 5) creates a new environment E1 : n = 5 - Enclosing = global
+;; Else condition:
+;; (factorial 4) creates a new environment E2 : n = 4 - Enclosing = global
+;; Else condition:
+;; (factorial 3) creates a new environment E3 : n = 3 - Enclosing = global
+;; Else condition:
+;; (factorial 2) creates a new environment E4 : n = 2 - Enclosing = global
+;; Else condition:
+;; (factorial 1) creates a new environment E5 : n = 1 - Enclosing = global
+;; If condition:
+;; 1 is returned into E4, E5 closes
+;; (* 2 1) returns 2 into E3, E4 closes
+;; (* 3 2) returns 6 into E2, E3 closes
+;; (* 4 6) returns 24 into E1, E2 closes
+;; (* 5 24) returns 120 into the calling enviroment
+
+;; Iterative Version
+;; (factorial 5) creates a new environment E0 : n = 5 - Enclosing = global
+;; fact-iter is unbound in E0 and so the interpreter moves to the global
+;; environment to locate the procedure
+;; (fact-iter 1 1 5) creates a new environment E1 : p = 1, c = 1, max = 5
+;; (ignoring tail recursion for now)
+;; Else condition:
+;; (fact-iter ) creates a new environment E2 : p = 1, c = 2, max = 5
+;; Else condition:
+;; (fact-iter ) creates a new environment E3 : p = 2, c = 3, max = 5
+;; Else condition:
+;; (fact-iter ) creates a new environement E4 : p = 6, c = 4, max = 5
+;; Else condition:
+;; (fact-iter ) creates a new environment E5 : p = 24, c = 5, max = 5
+;; Else condition:
+;; (fact-iter ) creates a ne environment E6 : p = 120, c = 6, max = 5
+;; If condition:
+;; 120 is passed into E5, E6 closes
+;; 120 is passed into E4, E5 closes
+;; 120 is passed into E3, E4 closes
+;; 120 is passed into E2, E3 closes
+;; 120 is passed into E1, E2 closes
+;; 120 is passed into E0, E1 closes
+;; 120 is passed into the calling environment, E0 closes
+
