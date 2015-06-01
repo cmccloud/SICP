@@ -143,3 +143,67 @@
          ((not (equal? ((account 'thief 'withdraw) 40) "Incorrect password"))
           "Error - succesfull login should have reset attempt counter")
         (else #t)))
+
+;; Exercise 3.5
+;; Generic monte carlo simulation runner
+;; experiment must be a thunk
+(define (monte-carlo trials experiment)
+  ;; trials = n:: 0 <= n
+  ;; experiment = fn() :: -> bool
+  (define (iter trials-remaining trials-passed)
+    (cond ((= trials-remaining 0)
+           (/ trials-passed trials))
+          ((experiment)
+           (iter (- trials-remaining 1)
+                 (+ trials-passed 1)))
+          (else (iter (- trials-remaining 1)
+                      trials-passed))))
+  (iter trials 0))
+
+(define (random-in-range low high)
+  (let ((range (- high low)))
+    (+ low (random range))))
+
+(define (estimate-integral P x1 x2 y1 y2 n)
+  ;; P = fn (x,y) :: -> bool
+  ;; x1, x2, y1, y2 = n
+  (* (* (- x2 x1) (- y2 y1))
+     (monte-carlo n (lambda () (P (random-in-range x1 x2)
+                                  (random-in-range y1 y2))))))
+
+(define (estimate-pi n)
+  (estimate-integral (lambda (x y)
+                       (< (+ (square x) (square y)) 1.0))
+                     -1.0 1.0 -1.0 1.0 n))
+
+;; tests
+(define (test3-5)
+  (list (estimate-pi 100)
+        (estimate-pi 1000)
+        (estimate-pi 2000)))
+
+;; Exercise 3.6
+(define (new-rand n)
+  ;; uses the linear congruential generator
+  (let ((a (expt 2 31))
+        (c 1103515245)
+        (m 12345))
+    (modulo (+ (* a n) c) m)))
+
+(define rand
+  (let ((x 632))
+    (lambda (m)
+      (cond ((eq? m 'generate)
+             (begin (set! x (new-rand x)) x))
+            ((eq? m 'reset)
+             (lambda (n) (set! x n)))
+            (else (error "Invalid Procedure RAND" n))))))
+
+;; tests
+(define (test3-6)
+  ;; Rand should be able to produce repeatable sequences of random numbers
+  (let* ((a (rand 'generate))
+        (b (rand 'generate))
+        (c ((rand 'reset) a))
+        (d (rand 'generate)))
+    (= b d)))
