@@ -425,5 +425,15 @@
 ;; (define acc2 (make-account 100))
 ;; This would create an environment E6 in which balance was bound to 100,
 ;; and there existed 3 procedures, withdraw, deposit, dispatch.
-;; These three procedures share the same code is the procedures created in
-;; frame E1, but their environment differs.
+;; These three procedures share the same code as the procedures created in
+;; frame E1, but their environments differ.
+
+;; Exercise 3.12
+;; (define x (list 'a 'b))
+;; (define y (list 'c 'd))
+;; (define z (append x y))
+;; z -> (a b c d)
+;; (cdr x) -> (b)
+;; (define w (append! x y))
+;; w -> (a b c d)
+;; (cdr x) -> (b c d)
