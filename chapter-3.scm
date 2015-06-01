@@ -402,3 +402,28 @@
 
 ;; In the second case, there is an additional frame in the environment
 ;; where the original initial value is maintained, left unchanged
+
+;; Exercise 3.11
+;; (define acc (make-account 50))
+;; Creates an environment E1 [balance = 50] in which there exist
+;; 3 procedures, withdraw, deposit, dispatch, which have E1 as their
+;; enclosing environment.
+;; ((acc 'deposit) 40)
+;; Creates an environment E2 in which dispatch attempts to return
+;; the object referenced by deposit. Which is unbound in E2, but
+;; is located in E1. Deposit then creates a new environment E3
+;; in which amount is bound to 40. When attempting to locate the variable
+;; balance, it is unbound in E3, but is found in E1, and set to 90
+;; ((acc 'withdraw) 60)
+;; Creates an environment E4 in which dispatch attempts to return the
+;; object referenced by withdraw, which is unbound in E4, but referenced
+;; in E1. Withdraw then creates a new environment E5 in which amount is
+;; bound to 60 - it locates the variable balance in E1, and sets it to 30.
+
+;; The local state for account is kept in E1
+;; If we defined a second accound
+;; (define acc2 (make-account 100))
+;; This would create an environment E6 in which balance was bound to 100,
+;; and there existed 3 procedures, withdraw, deposit, dispatch.
+;; These three procedures share the same code is the procedures created in
+;; frame E1, but their environment differs.
