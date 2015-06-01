@@ -437,3 +437,23 @@
 ;; (define w (append! x y))
 ;; w -> (a b c d)
 ;; (cdr x) -> (b c d)
+
+;; Exercise 3.13
+(define (make-cycle x)
+  (set-cdr! (last-pair x) x) x)
+
+(define z (make-cycle (list 'a 'b 'c)))
+
+;; cell1 = [a, cell2]
+;; cell2 = [b, cell3]
+;; cell3 = [c, cell1]
+;; Attempting to call (last-pair z) would result in an infinite loop
+
+;; tests
+(define (test3-13)
+  (define x (make-cycle '(1 2 3)))
+  (define (last-pair-safe x limit)
+    (cond ((<= limit 0) "Exceeded Maximum Call Depth")
+          ((null? (cdr x)) x)
+          (else (last-pair-safe (cdr x) (- limit 1)))))
+  (last-pair-safe x 10000))
