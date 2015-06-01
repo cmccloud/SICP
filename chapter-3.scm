@@ -571,10 +571,21 @@
             (else (helper (cdr seq) (+ count 1)))))
     (helper (cdr seq) 0)))
 
+;; alternative implementation of O(1) solution
+(define (has-cycle3? seq)
+  (define (helper seq count trailer)
+    (cond ((null? seq) #f)
+          ((eq? seq trailer) #t)
+          ((even? count)
+           (helper (cdr seq) (+ count 1) (cdr trailer)))
+          (else (helper (cdr seq) (+ count 1) trailer))))
+  (helper (cdr seq) 0 seq))
+
 ;; tests
 (define (test3-18)
   (define loop '(1 2 3))
   (define no-loop '(1 2 3))
   (set-cdr! (cddr loop) loop)
   (and (has-cycle2? loop)
-       (has-cycle? loop)))
+       (has-cycle? loop)
+       (has-cycle3? loop)))
