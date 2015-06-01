@@ -481,6 +481,8 @@
           (loop temp seq))))
   (loop seq '()))
 
+;; Exercise 3.15 - diagraming
+
 ;; Exercise 3.16
 (define (bad-count-pairs x)
   (if (not (pair? x)) 0
