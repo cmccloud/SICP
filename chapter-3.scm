@@ -208,6 +208,69 @@
         (d (rand 'generate)))
     (= b d)))
 
+;; Exercise 3.7
+
+;; The only internal change we have to make to make-account
+;; is the introduction of a new router called 'authorized? which
+;; always returns 'authorized
+(define (make-account balance password)
+  ;; internal state
+  (let ((attempts 0))
+    ;; procedures
+    (define (withdraw amount)
+      (if (>= balance amount)
+          (begin (set! balance (- balance amount))
+                 balance)
+          "Insufficient funds"))
+    (define (deposit amount)
+      (set! balance (+ balance amount))
+      balance)
+    ;; route-handler for incoming requests
+    (define (router m)
+      ;; resets attempts on successful login
+      (set! attempts 0)
+      (cond ((eq? m 'withdraw) withdraw)
+            ((eq? m 'deposit) deposit)
+            ((eq? m 'authorized?) 'authorized)
+            (else "Unknown Procedure MAKE-ACCOUNT" m)))
+    ;; denial procedures
+    (define (deny .x) "Incorrect password")
+    (define (call-cops .x) "Calling Police!")
+    ;; denial router
+    (define (deny-handler)
+      (set! attempts (+ attempts 1))
+      (if (>= attempts 7)
+          call-cops
+          deny))
+    ;; authentication module
+    (define (auth p m)
+      (if (eq? p password)
+          (router m)
+          (deny-handler)))
+    auth))
+
+;; The make joint procedure is responsible for handling multiple-passwords
+;; Additionally, the account returned is itself compatible with make-joint
+(define (make-joint account account-password new-password)
+  (define (new-account p m)
+    (if (eq? p new-password)
+        (account account-password m)
+        (account p m)))
+  (if (eq? (account account-password 'authorized?) 'authorized)
+      new-account
+      (lambda x "Access to your account was denied.")))
+
+;; tests
+(define (test3-7)
+  (define paul-account (make-account 100 'secret))
+  (define chris-account (make-joint paul-account 'secret 'smile))
+  (define dan-account (make-joint chris-account 'smile 'happy))
+  (cond ((not (= ((paul-account 'secret 'withdraw) 40) 60)) #f)
+        ((not (= ((chris-account 'smile 'withdraw) 60) 0)) #f)
+        ((not (= ((dan-account 'happy 'deposit) 100) 100)) #f)
+        ((not (= ((dan-account 'smile 'withdraw) 60) 40)) #f)
+        (else #t)))
+
 ;; Exercise 3.8
 (define f
   (let ((continue #t))
