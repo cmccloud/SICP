@@ -457,3 +457,90 @@
           ((null? (cdr x)) x)
           (else (last-pair-safe (cdr x) (- limit 1)))))
   (last-pair-safe x 10000))
+
+;; Exercise 3.14
+(define (mystery x)
+  (define (loop x y)
+    (if (null? x)
+        y
+        (let ((temp (cdr x)))
+          (set-cdr! x y)
+          (loop temp x))))
+  (loop x '()))
+(define v (list 'a 'b 'c 'd))
+(define w (mystery v))
+
+;; Mystery reverses in place
+;; v -> (a)
+;; w -> (d c b a)
+(define (reverse-in-place seq)
+  (define (loop seq new-seq)
+    (if (null? seq) new-seq
+        (let ((temp (cdr seq)))
+          (set-cdr! seq new-seq)
+          (loop temp seq))))
+  (loop seq '()))
+
+;; Exercise 3.16
+(define (bad-count-pairs x)
+  (if (not (pair? x)) 0
+      (+ (bad-count-pairs (car x))
+         (bad-count-pairs (cdr x))
+         1)))
+;; tests
+(define (test3-16)
+  (define a '(1 2 3))
+  ;; 3 -> 4
+  (define b (cons nil nil))
+  (define c (list b b))
+  ;; 3 -> 7
+  (define d (cons nil nil))
+  (define e (cons d d))
+  (define f (cons e e))
+  ;; infinite loop
+  (define g (cons nil nil))
+  (define h (cons g g))
+  (define i (cons h h))
+  (set-cdr! h h)
+  (cond ((not (= 3 (bad-count-pairs a))) #f)
+        ((not (= 4 (bad-count-pairs c))) #f)
+        ((not (= 7 (bad-count-pairs f))) #f)
+        ;; Infinite loop not being tested
+        (else #t)))
+
+;; Exercise 3.17
+(define (contains? seq x)
+  (cond ((null? seq) #f)
+        ((eq? (car seq) x) #t)
+        (else (contains? (cdr seq) x))))
+
+(define (count-pairs x)
+  (let ((S '())) ;; Set to store visited values
+    (define (traverse x)
+      (cond ((not (pair? x)) 0)
+            ((contains? S x) 0)
+            (else (set! S (cons x S))
+                  (+ (traverse (car x))
+                     (traverse (cdr x))
+                     1))))
+    (traverse x)))
+
+;; tests
+(define (test3-17)
+  ;; With the same structures that broke count pairs before
+  (define x (cons nil nil))
+  (define y (list x x))
+  ;; count-pairs of y should be 3
+  (define i (cons nil nil))
+  (define j (cons i i))
+  (define k (cons j j))
+  ;; count-pairs of k should be 3
+  (define a (cons nil nil))
+  (define b (cons a a))
+  (define c (cons b b))
+  (set-cdr! c c)
+  ;; count-pairs of c should be 3
+  (cond ((not (= 3 (count-pairs y))) #f)
+        ((not (= 3 (count-pairs k))) #f)
+        ((not (= 3 (count-pairs c))) #f)
+        (else #t)))
