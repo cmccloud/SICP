@@ -546,3 +546,34 @@
         ((not (= 3 (count-pairs k))) #f)
         ((not (= 3 (count-pairs c))) #f)
         (else #t)))
+
+;; Exercise 3.18
+;; O(n) space complexity
+(define (has-cycle? seq)
+  (let ((S '()))
+    (define (iterate seq)
+      (cond ((null? seq) #f)
+            ((contains? S seq) #t)
+            (else (set! S (cons seq S))
+                  (iterate (cdr seq)))))
+    (iterate seq)))
+
+;; O(1) space complexity
+(define (has-cycle2? seq)
+  (let ((trail seq))
+    (define (helper seq count)
+      (cond ((null? seq) #f)
+            ((eq? seq trail) #t)
+            ((even? count)
+             (set! trail (cdr trail))
+             (helper (cdr seq) (+ count 1)))
+            (else (helper (cdr seq) (+ count 1)))))
+    (helper (cdr seq) 0)))
+
+;; tests
+(define (test3-18)
+  (define loop '(1 2 3))
+  (define no-loop '(1 2 3))
+  (set-cdr! (cddr loop) loop)
+  (and (has-cycle2? loop)
+       (has-cycle? loop)))
