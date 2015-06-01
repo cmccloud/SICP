@@ -558,6 +558,7 @@
                   (iterate (cdr seq)))))
     (iterate seq)))
 
+;; Exercise 3.19
 ;; O(1) space complexity
 (define (has-cycle2? seq)
   (let ((trail seq))
