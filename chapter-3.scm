@@ -207,3 +207,30 @@
         (c ((rand 'reset) a))
         (d (rand 'generate)))
     (= b d)))
+
+;; Exercise 3.8
+(define f
+  (let ((continue #t))
+    (lambda (n)
+      (if continue
+          (begin (set! continue #f) n)
+          0))))
+
+(define (once fn)
+  (let ((continue #t))
+    (lambda x
+      (if continue
+          (begin (set! continue #f)
+                 (apply fn x))
+          0))))
+
+(define (identity x) x)
+
+;; tests
+(define (test3-8)
+  (define x (once identity))
+  (define a (x 1))
+  (define y (once identity))
+  (define b (y 0))
+  (and (= (+ a (x 0)) 1)
+       (= (+ b (y 1)) 0)))
