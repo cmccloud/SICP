@@ -696,9 +696,9 @@
     (define (make-node val)
       (cons val (cons '() '())))
     (define (next-node node) (cddr node))
-    (define (previous-node node) (cadr node))
+    (define (prior-node node) (cadr node))
     (define (set-next-node! node x) (set-cdr! (cdr node) x))
-    (define (set-previous-node! node x) (set-car! (cdr node) x))
+    (define (set-prior-node! node x) (set-car! (cdr node) x))
 
     ;; Deque Procedures
     (define (empty?) (or (null? head) (null? tail)))
@@ -712,7 +712,7 @@
                (set-tail! node)
                head)
               (else
-               (set-previous-node! head node)
+               (set-prior-node! head node)
                (set-next-node! node head)
                (set-head! node)
                head))))
@@ -725,7 +725,7 @@
                head)
               (else
                (set-next-node! tail node)
-               (set-previous-node! node tail)
+               (set-prior-node! node tail)
                (set-tail! node)
                head))))
     (define (front-delete!)
@@ -738,12 +738,12 @@
                     head)
                    (else
                     ;; remove old pointers on our new head
-                    (set-previous-node! head '())
+                    (set-prior-node! head '())
                     head)))))
     (define (rear-delete!)
       (cond ((empty?) (error "REAR-DELETE! called on empty dequue" head))
             (else
-             (set-tail! (previous-node tail))
+             (set-tail! (prior-node tail))
              (cond ((empty?)
                     ;; if deque is empty, make sure to remove old head pointers
                     (set-head! '())
