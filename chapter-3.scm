@@ -588,4 +588,9 @@
   (set-cdr! (cddr loop) loop)
   (and (has-cycle2? loop)
        (has-cycle? loop)
-       (has-cycle3? loop)))
+       (has-cycle3? loop)
+       (and (not (has-cycle? no-loop))
+            (not (has-cycle2? no-loop))
+            (not (has-cycle3? no-loop)))))
+
+;; Exercise 3.20 - Diagram
