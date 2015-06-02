@@ -594,3 +594,35 @@
             (not (has-cycle3? no-loop)))))
 
 ;; Exercise 3.20 - Diagram
+
+(define (front-ptr queue) (car queue))
+(define (rear-ptr queue) (cdr queue))
+(define (set-front-ptr! queue item) (set-car! queue item))
+(define (set-rear-ptr! queue item) (set-cdr! queue item))
+(define (make-queue) (cons '() '()))
+(define (empty-queue? queue) (null? (front-ptr queue)))
+
+(define (front-queue queue)
+  (if (empty-queue? queue)
+      (error "FRONT called with an empty queue" queue)
+      (car (front-ptr queue))))
+
+(define (insert-queue! queue item)
+  (let ((node (cons item '())))
+    (cond ((empty-queue? queue)
+           (set-front-ptr! queue node)
+           (set-rear-ptr! queue node)
+           queue)
+          (else
+           (set-cdr! (rear-ptr queue) node)
+           (set-rear-ptr! queue node)
+           queue))))
+
+(define (delete-queue! queue)
+  (cond ((empty-queue? queue)
+         (error "DELETE! called with an empty queue" queue))
+        (else (set-front-ptr! queue (cdr (front-ptr queue)))
+              queue)))
+
+(define (print-queue queue)
+  (display (front-ptr queue)))
