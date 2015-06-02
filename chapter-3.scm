@@ -623,6 +623,11 @@
          (error "DELETE! called with an empty queue" queue))
         (else (set-front-ptr! queue (cdr (front-ptr queue)))
               queue)))
-
+;; Exercise 3.21
+;; The 'extra' rear item represents the updating pointer to the tail of the queue
+;; The because the front of the queue is a series of cons cells, terminating with
+;; an empty list, the interpreter prints it as a list.
+;; To print only the elements currently in the queue, one would simply print
+;; the front-part of the queue.
 (define (print-queue queue)
   (display (front-ptr queue)))
