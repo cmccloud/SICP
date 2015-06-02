@@ -635,11 +635,13 @@
 
 ;; Exercise 3.22
 (define (make-queue)
-  ;; internal state
   ;; This implementation never reveals the pointer to tail for simplified
   ;; displaying of queue.
+
+  ;; internal state
   (let ((head '())
         (tail '()))
+
     ;; internal procedure definitions
     (define (empty?) (null? head))
     (define (set-head! x) (set! head x))
@@ -673,7 +675,7 @@
   ((queue 'insert!) item))
 
 ;; tests
-(define (test3-21)
+(define (test3-22)
   (define Q (make-queue))
   (cond ((not (equal? (insert-queue! Q 'a) '(a))) #f)
         ((not (equal? (insert-queue! Q 'b) '(a b))) #f)
@@ -681,4 +683,118 @@
         ((not (equal? (insert-queue! Q 'c) '(b c))) #f)
         ((not (equal? (delete-queue! Q) '(c))) #f)
         ((not (equal? (delete-queue! Q) '())) #f)
+        (else #t)))
+
+;; Exercise 3.23
+(define (make-deque)
+  ;; internal state
+  (let ((head '())
+        (tail '()))
+
+    ;; internal procedure definitions
+    ;; Node Procedures
+    (define (make-node val)
+      (cons val (cons '() '())))
+    (define (next-node node) (cddr node))
+    (define (previous-node node) (cadr node))
+    (define (set-next-node! node x) (set-cdr! (cdr node) x))
+    (define (set-previous-node! node x) (set-car! (cdr node) x))
+
+    ;; Deque Procedures
+    (define (empty?) (or (null? head) (null? tail)))
+    (define (set-head! x) (set! head x))
+    (define (set-tail! x) (set! tail x))
+    (define (front-insert! x)
+      (let ((node (make-node x)))
+        (cond ((empty?)
+               ;; set head and tail to the same node
+               (set-head! node)
+               (set-tail! node)
+               head)
+              (else
+               (set-previous-node! head node)
+               (set-next-node! node head)
+               (set-head! node)
+               head))))
+    (define (rear-insert! x)
+      (let ((node (make-node x)))
+        (cond ((empty?)
+               ;; set head and tail to the same node
+               (set-head! node)
+               (set-tail! node)
+               head)
+              (else
+               (set-next-node! tail node)
+               (set-previous-node! node tail)
+               (set-tail! node)
+               head))))
+    (define (front-delete!)
+      (cond ((empty?) (error "FRONT-DELETE! called on empty deqeue" head))
+            (else
+             (set-head! (next-node head))
+             (cond ((empty?)
+                    ;; if deque is empty, make sure to remove old tail pointers
+                    (set-tail! '())
+                    head)
+                   (else
+                    ;; remove old pointers on our new head
+                    (set-previous-node! head '())
+                    head)))))
+    (define (rear-delete!)
+      (cond ((empty?) (error "REAR-DELETE! called on empty dequue" head))
+            (else
+             (set-tail! (previous-node tail))
+             (cond ((empty?)
+                    ;; if deque is empty, make sure to remove old head pointers
+                    (set-head! '())
+                    head)
+                   (else
+                    ;; remove old pointers on our new tail
+                    (set-next-node! tail '())
+                    head)))))
+    ;; interface
+    (define (router m)
+      (cond ((eq? m 'front-insert!) front-insert!)
+            ((eq? m 'rear-insert!) rear-insert!)
+            ((eq? m 'front-delete!) front-delete!)
+            ((eq? m 'rear-delete!) rear-delete!)
+            (else (lambda x "Unknown Operation Deque"))))
+
+    router))
+
+(define (format-deque deque)
+  ;; format deque transforms a deque into a list for easy printing
+  (if (null? deque) deque
+      (cons (car deque)
+            (format-deque (cddr deque)))))
+
+(define (front-insert-deque! deque x)
+  (format-deque ((deque 'front-insert!) x)))
+
+(define (rear-insert-deque! deque x)
+  (format-deque ((deque 'rear-insert!) x)))
+
+(define (front-delete-deque! deque)
+  (format-deque ((deque 'front-delete!))))
+
+(define (rear-delete-deque! deque)
+  (format-deque ((deque 'rear-delete!))))
+
+;; tests
+(define (test3-23)
+  (define d (make-deque))
+  ;; Insert should work from both the front and the rear
+  (cond ((not (equal? (front-insert-deque! d 'a) '(a))) #f)
+        ((not (equal? (front-insert-deque! d 'b) '(b a))) #f)
+        ((not (equal? (rear-insert-deque! d 'c) '(b a c))) #f)
+        ((not (equal? (rear-insert-deque! d 'd) '(b a c d))) #f)
+        ;; Delete should work from both the front and the rear
+        ((not (equal? (front-delete-deque! d) '(a c d))) #f)
+        ((not (equal? (rear-delete-deque! d) '(a c))) #f)
+        ((not (equal? (rear-delete-deque! d) '(a))) #f)
+        ;; Both front and rear delete should remember to remove old
+        ;; pointers when removing final item
+        ((not (equal? (front-delete-deque! d) '())) #f)
+        ((not (equal? (front-insert-deque! d 'a) '(a))) #f)
+        ((not (equal? (rear-delete-deque! d) '())) #f)
         (else #t)))
