@@ -623,6 +623,7 @@
          (error "DELETE! called with an empty queue" queue))
         (else (set-front-ptr! queue (cdr (front-ptr queue)))
               queue)))
+
 ;; Exercise 3.21
 ;; The 'extra' rear item represents the updating pointer to the tail of the queue
 ;; The because the front of the queue is a series of cons cells, terminating with
@@ -631,3 +632,53 @@
 ;; the front-part of the queue.
 (define (print-queue queue)
   (display (front-ptr queue)))
+
+;; Exercise 3.22
+(define (make-queue)
+  ;; internal state
+  ;; This implementation never reveals the pointer to tail for simplified
+  ;; displaying of queue.
+  (let ((head '())
+        (tail '()))
+    ;; internal procedure definitions
+    (define (empty?) (null? head))
+    (define (set-head! x) (set! head x))
+    (define (set-tail! x) (set! tail x))
+    (define (insert! x)
+      (let ((node (cons x '())))
+        (cond ((empty?)
+               (set-head! node)
+               (set-tail! node)
+               head)
+              (else
+               (set-cdr! tail node)
+               (set-tail! node)
+               head))))
+    (define (delete!)
+      (cond ((empty?) (error "DELETE! called with an empty queue" head))
+            (else (set-head! (cdr head))
+                  head)))
+    ;; interface
+    (define (router m)
+      (cond ((eq? m 'insert!) insert!)
+            ((eq? m 'delete!) delete!)
+            (else (lambda x "Unknown Operation MAKE-QUEUE" m))))
+
+    router))
+
+(define (delete-queue! queue)
+  ((queue 'delete!)))
+
+(define (insert-queue! queue item)
+  ((queue 'insert!) item))
+
+;; tests
+(define (test3-21)
+  (define Q (make-queue))
+  (cond ((not (equal? (insert-queue! Q 'a) '(a))) #f)
+        ((not (equal? (insert-queue! Q 'b) '(a b))) #f)
+        ((not (equal? (delete-queue! Q) '(b))) #f)
+        ((not (equal? (insert-queue! Q 'c) '(b c))) #f)
+        ((not (equal? (delete-queue! Q) '(c))) #f)
+        ((not (equal? (delete-queue! Q) '())) #f)
+        (else #t)))
