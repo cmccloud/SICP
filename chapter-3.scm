@@ -914,3 +914,106 @@
           ((not (equal? (find '(c)) 'c)) #f)
           (else #t))))
 
+;; Exercise 3.26
+(define (make-binary-tree pred?)
+  ;; pred? must be a function which takes in a node value as it's first
+  ;; argument and a target value as it's second argument and returns either:
+  ;; 0 if the node value is equal to the target
+  ;; 1 if the node value is greater than the target value
+  ;; -1 if the node value is less than the target value
+
+  ;; Internal Procedures
+  (define (make-tree value left right)
+    (list value left right))
+  (define (tree-value tree) (car tree))
+  (define (left-branch tree) (cadr tree))
+  (define (right-branch tree) (caddr tree))
+  (define (set-value! tree value) (set-car! tree value))
+  (define (set-left! tree value) (set-car! (cdr tree) value))
+  (define (set-right! tree value) (set-car! (cddr tree) value))
+  (define (contains? tree target)
+    (if (or (null? tree)
+            (null? (tree-value tree))) false
+        (let ((comparison (pred? (tree-value tree) target)))
+          (cond ((= comparison 0) (tree-value tree))
+                ((= comparison 1)
+                 (contains? (left-branch tree) target))
+                (else (contains? (right-branch tree) target))))))
+  (define (insert-tree! tree value)
+    (if (null? (tree-value tree)) (set-value! tree value)
+        (let ((comparison (pred? (tree-value tree) value)))
+          (cond ((= comparison 0) (set-value! tree value))
+                ((= comparison 1)
+                 (if (null? (left-branch tree))
+                     (set-left! tree (make-tree value '() '()))
+                     (insert-tree! (left-branch tree) value)))
+                (else
+                 (if (null? (right-branch tree))
+                     (set-right! tree (make-tree value '() '()))
+                     (insert-tree! (right-branch tree) value)))))))
+  (let ((local-state (make-tree '() '() '())))
+    (define (dispatch m)
+      (cond ((eq? m 'lookup) (partial contains? local-state))
+            ((eq? m 'insert!) (partial insert-tree! local-state))
+            ((eq? m 'report) local-state)
+            (else (error "Unknown Procedure TREE" m))))
+
+    dispatch))
+
+(define (lookup-tree tree value)
+  ((tree 'lookup) value))
+
+(define (insert-tree! tree value)
+  ((tree 'insert!) value))
+
+(define (make-table)
+  ;; Internal Procedures
+  (define (make-record key value)
+    (cons key value))
+  (define (key-record record) (car record))
+  (define (val-record record) (cdr record))
+  (define (pred? x y)
+    (cond ((= (key-record x) (key-record y)) 0)
+          ((> (key-record x) (key-record y)) 1)
+          (else -1)))
+  ;; Internal State
+  (let ((local-state (make-binary-tree pred?)))
+    (define (insert! key value)
+      (insert-tree! local-state (make-record key value)))
+    (define (lookup key)
+      (let ((result (lookup-tree local-state (make-record key '()))))
+        (if result (val-record result) result)))
+    (define (dispatch m)
+      (cond ((eq? m 'lookup) lookup)
+            ((eq? m 'insert!) insert!)
+            ((eq? m 'report) (local-state 'report))
+            (else (error "Unknown Procedure TABLE" m))))
+
+    dispatch))
+
+(define (table-lookup table key)
+  ((table 'lookup) key))
+(define (table-insert! table key value)
+  ((table 'insert!) key value))
+
+;; tests
+(define (test3-26)
+  (let* ((my-table (make-table))
+         (put (partial table-insert! my-table))
+         (find (partial table-lookup my-table)))
+    (put 4 'a)
+    (put 3 'b)
+    (put 6 'c)
+    (put 5 'd)
+    (put 7 'e)
+    (put 1 'f)
+    (put 2 'g)
+    (put 4 'l)
+    (cond ((not (equal? (find 4) 'l)) #f)
+          ((not (equal? (find 3) 'b)) #f)
+          ((not (equal? (find 6) 'c)) #f)
+          ((not (equal? (find 5) 'd)) #f)
+          ((not (equal? (find 7) 'e)) #f)
+          ((not (equal? (find 1) 'f)) #f)
+          ((not (equal? (find 2) 'g)) #f)
+          (else #t))))
