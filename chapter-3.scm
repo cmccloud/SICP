@@ -798,3 +798,96 @@
         ((not (equal? (front-insert-deque! d 'a) '(a))) #f)
         ((not (equal? (rear-delete-deque! d) '())) #f)
         (else #t)))
+
+;; Exercise 3.24
+(define (make-table same-key?)
+  ;; same-key? :: f (x,y) -> bool
+  ;; Internal State
+  (let ((local-table (list '*table*)))
+    ;; Internal Procedures
+    (define (find-in key seq)
+      (cond ((null? seq) #f)
+            ((same-key? key (caar seq)) (car seq))
+            (else (find-in key (cdr seq)))))
+    (define (lookup key-1 key-2)
+      (let ((subtable
+             (find-in key-1 (cdr local-table))))
+        (if subtable
+            (let ((record
+                   (find-in key-2 (cdr subtable))))
+              (if record (cdr record) false))
+            false)))
+    (define (insert! key-1 key-2 value)
+      (let ((subtable
+             (find-in key-1 (cdr local-table))))
+        (if subtable
+            (let ((record
+                   (find-in key-2 (cdr subtable))))
+              (if record
+                  (set-cdr! record value)
+                  (set-cdr! subtable
+                            (cons (cons key-2 value)
+                                  (cdr subtable)))))
+            (set-cdr! local-table
+                      (cons (list key-1 (cons key-2 value))
+                            (cdr local-table)))))
+      'ok)
+
+    ;; interface
+    (define (dispatch m)
+      (cond ((eq? m 'lookup-proc) lookup)
+            ((eq? m 'insert-proc!) insert!)
+            (else (error "Unknown operation: TABLE" m))))
+
+    dispatch))
+
+(define (insert-table! table k1 k2 v)
+  ((table 'insert-proc!) k1 k2 v))
+
+(define (lookup-table table k1 k2)
+  ((table 'lookup-proc) k1 k2))
+
+;; Exercise 3.25
+(define (make-table same-key?)
+  ;; Internal Procedures
+  (define (partial f . bound-args)
+    (lambda args (apply f (append bound-args args))))
+  (define (contains? record key)
+    (cond ((null? record) false)
+          ((same-key? key (caar record)) (car record))
+          (else (contains? (cdr record) key))))
+  (define (make-record keys value)
+    (if (= (length keys) 1)
+        (cons (car keys) value)
+        (list (car keys) (make-record (cdr keys) value))))
+  (define (lookup table keys)
+    (let ((subtable (contains? (cdr table) (car keys))))
+      (if subtable
+          (if (= (length keys) 1)
+              (cdr subtable)
+              (lookup subtable (cdr keys)))
+          false)))
+  (define (insert! table keys value)
+    (let ((subtable (contains? (cdr table) (car keys))))
+      (if subtable
+          (if (= (length keys) 1)
+              (set-cdr! subtable value)
+              (insert! subtable (cdr keys) value))
+          (set-cdr! table
+                    (cons (make-record keys value)
+                          (cdr table))))))
+  ;; Internal State
+  (let ((local-table (list '*table*)))
+    ;; Interface
+    (define (dispatch m)
+      (cond ((eq? m 'insert-proc!) (partial insert! local-table))
+            ((eq? m 'lookup-proc) (partial lookup local-table))
+            (else (error "Unknown procedure TABLE" m))))
+
+    dispatch))
+
+(define (insert-table! table keys value)
+  ((table 'insert-proc!) keys value))
+
+(define (lookup-table table keys)
+  ((table 'lookup-proc) keys))
