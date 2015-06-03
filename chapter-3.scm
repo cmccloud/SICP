@@ -848,10 +848,11 @@
   ((table 'lookup-proc) k1 k2))
 
 ;; Exercise 3.25
+(define (partial f . bound-args)
+    (lambda args (apply f (append bound-args args))))
+
 (define (make-table same-key?)
   ;; Internal Procedures
-  (define (partial f . bound-args)
-    (lambda args (apply f (append bound-args args))))
   (define (contains? record key)
     (cond ((null? record) false)
           ((same-key? key (caar record)) (car record))
@@ -891,3 +892,25 @@
 
 (define (lookup-table table keys)
   ((table 'lookup-proc) keys))
+
+;; tests
+(define (test3-25)
+  (let* ((table (make-table equal?))
+        (find (partial lookup-table table))
+        (put (partial insert-table! table)))
+    (put '(a a a) 'aaa)
+    (put '(a a b) 'aab)
+    (put '(a a c) 'aac)
+    (put '(a b) 'ab)
+    (put '(a c) 'ac)
+    (put '(b) 'b)
+    (put '(c) 'c)
+    (cond ((not (equal? (find '(a a a)) 'aaa)) #f)
+          ((not (equal? (find '(a a b)) 'aab)) #f)
+          ((not (equal? (find '(a a c)) 'aac)) #f)
+          ((not (equal? (find '(a b)) 'ab)) #f)
+          ((not (equal? (find '(a c)) 'ac)) #f)
+          ((not (equal? (find '(b)) 'b)) #f)
+          ((not (equal? (find '(c)) 'c)) #f)
+          (else #t))))
+
