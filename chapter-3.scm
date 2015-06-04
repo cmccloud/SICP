@@ -1017,3 +1017,174 @@
           ((not (equal? (find 1) 'f)) #f)
           ((not (equal? (find 2) 'g)) #f)
           (else #t))))
+
+;; Exercise 3.27 - Diagram
+(define (memoize f)
+  (let ((table (make-table)))
+    (lambda x
+      (let ((previous-result (lookup x table)))
+        (or previous-result
+            (let ((result (apply f x)))
+              (insert! x result table)
+              result))))))
+
+
+;; 3.3.4 - Event Driven Digital Circuit Simulator
+;; Based on Diagram in Figure 3.25
+;; A B S C are arguments to the half-adder - They represent the interface
+;; Similarly, in the diagram, it is wires a b s c that extend beyond the
+;; boundaries of the half-adder; wires d and e are entirely internal
+;; to the procedure
+(define (half-adder a b s c)
+  (let ((d (make-wire)) (e (make-wire)))
+    (or-gate a b d)
+    (and-gate a b c)
+    (inverter c e)
+    (and-gate d e s)
+    'ok))
+
+;; A full-adder is a basic circuit element used in adding two binary numbers
+;; a and b are the bits at the corresponding positions in the two numbers to
+;; be added, and c-in is the carry bit from the addition one place to the right
+;; The circuit generates sum, where is the sum bit in the corresponding position
+;; and c-out, which is the carry bit to be propogated to the left
+(define (full-adder a b c-in sum c-out)
+  (let ((s (make-wire)) (c1 (make-wire)) (c2 (make-wire)))
+    (half-adder b c-in s c1)
+    (half-adder a s sum c2)
+    (or-gate c1 c2 c-out)
+    'ok))
+
+;; (get-signal wire) -> returns the current value of the signal on the wire
+;; (set-signal! wire new-value) -> changes the value on the signal to new value
+;; (add-action! wire proc) -> asserts that the designated procedure of no
+;; arguments should be run whenever the signal on the wire changes value
+;; (after-delay delay proc) -> runs procedure after given delay
+(define (logical-not s)
+  (cond ((= s 0) 1)
+        ((= s 1) 0)
+        (else (error "Invalid signal" s))))
+
+(define (logical-and s1 s2)
+  (cond ((and (= s1 1) (= s2 1)) 1)
+        ((or (= s1 0) (= s2 0)) 0)
+        (else (error "Invalid signal" (list s1 s2)))))
+
+(define (logical-or s1 s2)
+  (cond ((or (= s1 1) (= s2 1)) 1)
+        ((and (= s1 0) (= s2 0)) 0)
+        (else (error "Invalid signal" (list s1 s2)))))
+
+(define (inverter input output)
+  (define (invert-intput)
+    (let ((new-value (logical-not (get-signal input))))
+      (after-delay inverter-delay
+                   (lambda () (set-signal! output new-value)))))
+  (add-action! input invert-input) 'ok)
+
+;; Truth table
+;; (t,f) -> f
+;; (f, t) -> f
+;; (t, t) -> t
+;; (f, f) -> f
+(define (and-gate a1 a2 output)
+  (define (and-action-procedure)
+    (let ((new-value
+           (logical-and (get-signal a1) (get-signal a2))))
+      (after-delay and-gate-delay
+                   (lambda () (set-signal! output new-value)))))
+  (add-action! a1 and-action-procedure)
+  (add-action! a2 and-action-procedure)
+  'ok)
+
+;; Exercise 3.28
+(define (or-gate a1 a2 output)
+  (define (or-action-procedure)
+    (let ((new-value
+           (logical-or (get-signal a1) (get-signal a2))))
+      (after-delay or-gate-delay
+                   (lambda () (set-signal! output new-value)))))
+  (add-action! a1 or-action-procedure)
+  (add-action! a2 or-action-procedure)
+  'ok)
+
+;; Exercise 3.29
+;; Truth Table
+;; (t,f) -> t
+;; (f,t) -> t
+;; (t, t) -> t
+;; (f, f) -> f
+
+(define (compound-or-gate a1 a2 output)
+  (let ((b1 (make-wire)) (b2 (make-wire)) (b3 (make-wire)))
+    ;; if either a1 or a2 changes state
+    ;; one inverter delay later b1 or b2 will change state
+    ;; if either b1 or b2 change state
+    ;; one and-gate delay later b3 will change state
+    ;; if b3 changes state
+    ;; one inverter delay later output changes state
+    (inverter a1 b1)
+    (inverter a2 b2)
+    (and-gate b1 b2 b3)
+    (inverter b3 output)))
+
+;; Example:
+;; Initial State
+;; a1 = 0, a2 = 0
+;; b1 = 1, b2 = 1
+
+;; a1 -> 1
+;; b1 -> 0
+;; (and-gate b1 b2) -> (and-gate 0 1) -> 0
+;; b3 -> 0
+;; output -> 1
+
+;; Exercise 3.30
+;; a b s :: list of wires
+;; c :: wire
+(define (ripple-carry-adder a b s c)
+  (let ((c-in (make-wire)))
+    (if (null? (cdr a))
+        (set-signal! c-in 0)
+        (ripple-carry-adder (cdr a) (cdr b) (cdr s) c-in))
+    (full-adder (car a) (car b) c-in (car s) c)))
+;; The delay needed to obtains the complete output is
+;; equal to (* n full-adder-delay) ::
+;; (* n (+ (* 2 half-adder-delay) or-gate-delay))
+;; half-adder-delay =
+;; (+ and-gate-delay (max (+ and-gate-delay inverter-delay) or-gate-delay))
+;; n-bit-ripple-carrier-full-delay =
+;; (* n or-gate-delay
+;;      (+ and-gate-delay
+;;         (max (+ and-gate-delay inverter-delay)
+;;              or-gate-delay)))
+
+(define (call-each procedures)
+  (if (null? procedures) 'done
+      (begin ((car procedures))
+             (call-each (cdr procedures)))))
+
+(define (make-wire)
+  (let ((signal-value 0) (action-procedures '()))
+    (define (set-my-signal! new-value)
+      (if (not (= signal-value new-value))
+          (begin (set! signal-value new-value)
+                 (call-each action-procedures))
+          'done))
+    (define (accept-action-procedure! proc)
+      (set! action-procedures
+            (cons proc action-procedures)
+            (proc)))
+    (define (dispatch m)
+      (cond ((eq? m 'get-signal) signal-value)
+            ((eq? m 'set-signal!) set-my-signal!)
+            ((eq? m 'add-action!) accept-action-procedure!)
+            (else (error "Unknown operation: WIRE" m))))
+
+    dispach))
+
+(define (get-signal wire) (wire 'get-signal))
+(define (set-signal! wire new-value)
+  ((wire 'set-signal!) new-value))
+(define (add-action! wire action-procedure)
+  ((wire 'add-action!) action-procedure))
