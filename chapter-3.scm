@@ -1284,4 +1284,303 @@
                            (segment-time first-seg))
         (front-queue (segment-queue first-seg)))))
 
+;; =============================================================================
+;; Project Idea
+;; Refactoring the Circuit Simulator to use a generic
+;; Events mix-in procedure
+;; Mix in procedure will look something like this
+(define (events-mix-in object)
+  ;; Internal Event Table
+  ;; 2d table with each event corresponding to a list of one or more
+  ;; procedures to be run in response to that event
+  (define (make-event-table) (list '*event-table*))
+  (define (add-event! table key procedure)
+    (let ((entry (find-in table key)))
+      (if entry
+          (set-cdr! entry (cons procedure (cdr entry)))
+          (set-cdr! table (cons (list key procedure)
+                                (cdr table))))))
+  (define (find-in table key)
+    (define (search entries)
+      (cond ((null? entries) #f)
+            ((equal? key (car (car entries))) (car entries))
+            (else (search (cdr entries)))))
+    (search (cdr table)))
+
+  (let ((events (make-event-table)))
+    (define (on! event response)
+      (add-event! events event response))
+
+    (define (trigger event)
+      (let ((handlers (find-in events event)))
+        (if handlers
+            (for-each (lambda (proc) (proc object)) (cdr handlers)))))
+
+    (define (dispatch m)
+      (cond ((eq? m 'on!) on!)
+            ((eq? m 'trigger) trigger)
+            (else (object m))))
+
+    dispatch))
+
+(define (on! event response . subscribers)
+  (for-each (lambda (subscriber) ((subscriber 'on!) event response)) subscribers))
+
+(define (trigger event . publishers)
+  (for-each (lambda (publisher) ((publisher 'trigger) event)) publishers))
+
+;; Wires would look something like
+(define (make-wire)
+  (let ((signal-value 0))
+    (define (set-signal! new-value)
+      (set! signal-value new-value))
+    (define (dispatch m)
+      (cond ((= m 'get-signal) signal-value)
+            ((= m 'set-signal!) set-signal!)
+            (else (error "Unknown operation: WIRE" m))))
+
+    (events-mix-in dispatch)))
+
+(define (get-signal wire)
+  (wire 'get-signal))
+
+(define (set-signal! wire new-value)
+  (if (not (= new-value (get-signal wire)))
+      (begin ((wire 'set-signal!) new-value)
+             (trigger 'signal-change wire))))
+
+;; a function box might look like this
+(define (and-gate a1 a2 output)
+  (define (and-action-procedure . caller)
+    (let ((new-value
+           (logical-and (get-signal a1) (get-signal a2))))
+      (after-delay and-gate-delay
+                   (lambda () (set-signal! output new-value)))))
+  (on! 'signal-change and-action-procedure a1 a2)
+  (and-action-procedure)
+  'ok)
+
+;; the agenda would be left unchanged
+;; =============================================================================
+
 ;; Exercise 3.32 - TODO
+
+;; 3.3.5 Propagation of Constraints
+(define (inform-about-value constraint)
+  (constraint 'I-have-a-value))
+
+(define (inform-about-no-value constraint)
+  (constraint 'I-lost-my-value))
+
+(define (adder a1 a2 sum)
+  ;; Specifies that the quantities a1, a2, and sum must be related by the
+  ;; equation :: a1 + a2 = sum
+  (define (has-values? x y)
+    (and (has-value? x) (has-value? y)))
+
+  (define (set-sum! augend addend sum caller)
+    (set-value! sum (+ (get-value augend) (get-value addend)) caller))
+
+  (define (set-difference! minuend subtrahend difference caller)
+    (set-value! difference (- (get-value minuend) (get-value subtrahend)) caller))
+
+  (define (process-new-value)
+    (cond ((has-values? a1 a2) (set-sum! a1 a2 sum me))
+          ((has-values? a1 sum) (set-difference! sum a1 a2 me))
+          ((has-values? a2 sum) (set-difference! sum a2 a1 me))))
+
+  (define (process-forget-value)
+    (forget-value! sum me)
+    (forget-value! a1 me)
+    (forget-value! a2 me)
+    (process-new-value))
+
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Unknown request: ADDER" request))))
+
+  (connect a1 me)
+  (connect a2 me)
+  (connect sum me)
+  me)
+
+(define (multiplier x y product)
+  ;; Specifies that the quantities x, y, and product must be related by the
+  ;; equation :: x * y = product
+  (define (mul-by-zero? a b)
+    (or (and (has-value? a) (= (get-value b) 0))
+        (and (has-value? b) (= (get-value a) 0))))
+
+  (define (has-values? x y)
+    (and (has-value? x) (has-value? y)))
+
+  (define (set-product! mul1 mul2 product caller)
+    (set-value! product (* (get-value mul1) (get-value mul2)) caller))
+
+  (define (set-quotient! numer denom quotient caller)
+    (set-value! qoutient (/ (get-value numer) (get-value denom)) caller))
+
+  (define (process-new-value)
+    (cond ((mul-by-zero? x y) (set-value! product 0 me))
+          ((has-values? x y) (set-product! x y product me))
+          ((has-values? x product) (set-quotient! x product y me))
+          ((has-values? y product) (set-quotient! y product x me))))
+
+  (define (process-forget-value)
+    (forget-value! product me)
+    (forget-value! x me)
+    (forget-value! y me)
+    (process-new-value))
+
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value)
+           (process-new-value))
+          ((eq? request 'I-lost-my-value)
+           (process-forget-value))
+          (else (error "Unknown request: MULTIPLIER" request))))
+
+  (connect x me)
+  (connect y me)
+  (connect product me)
+  me)
+
+(define (constant value connector)
+  ;; Specifies that a given connector take a given value and refuses
+  ;; requests to alter that value
+  (define (me request)
+    (error "Unknown request: CONSTANT" request))
+  (connect connector me)
+  (set-value! connector value me)
+
+  me)
+
+(define (probe name connector)
+  ;; Prints a message about the setting or unsetting of the designated
+  ;; connector
+  (define (print-probe value)
+    (newline) (display "Probe: ") (display name)
+    (display " = ") (display value))
+  (define (process-new-value)
+    (print-probe (get-value connector)))
+  (define (process-forget-value) (print-probe "?"))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value) (process-new-value))
+          ((eq? request 'I-lost-my-value) (process-forget-value))
+          (else (error "Unknown requst: PROBE" request))))
+
+  (connect connector me)
+  me)
+
+(define (for-each-except exception proc col)
+  (cond ((null? col) 'done)
+        ((eq? exception (car col)) (for-each-except exception proc (cdr col)))
+        (else (proc (car col))
+              (for-each-except exception proc (cdr col)))))
+
+(define (make-connector)
+  ;; value :: the current value of the connector
+  ;; informant :: the object taht set the connector's value
+  ;; constraints :: a list of the constraints in which the connector
+  ;; participates
+  (let ((value false) (informant false) (constraints '()))
+
+    (define (set-my-value new-value setter)
+      (cond ((not (has-value? me))
+             (set! value new-value)
+             (set! informant setter)
+             (for-each-except setter
+                              inform-about-value
+                              constraints))
+            ((not (= value new-value))
+             (error "Contradiction" (list value new-value)))
+            (else 'ignored)))
+
+    (define (forget-my-value retractor)
+      (if (eq? retractor informant)
+          (begin (set! informant false)
+                 (for-each-except retractor
+                                  inform-about-no-value
+                                  constraints))
+          'ignored))
+
+    (define (connect new-constraint)
+      (if (not (memq new-constraint constraints))
+          (set! constraints
+                (cons new-constraint constraints)))
+      (if (has-value? me)
+          (inform-about-value new-constraint))
+      'done)
+
+    (define (me request)
+      (cond ((eq? request 'has-value?) (if informant true false))
+            ((eq? request 'value) value)
+            ((eq? request 'set-value!) set-my-value)
+            ((eq? request 'forget) forget-my-value)
+            ((eq? request 'connect) connect)
+            (else (error "Unknown operation: CONNECTOR" request))))
+
+    me))
+
+(define (has-value? connector) (connector 'has-value?))
+
+(define (get-value connector) (connector 'value))
+
+(define (set-value! connector new-value informant)
+  ((connector 'set-value!) new-value informant))
+
+(define (forget-value! connector retractor)
+  ((connector 'forget) retractor))
+
+(define (connect connector new-constraint)
+  ((connector 'connect) new-constraint))
+
+;; Exercise 3.33
+;; as new primitive
+(define (averager a b c)
+  ;; Specifies that the three connectors a, b, and c be related by the equation
+  ;; c = (a + b) / 2
+  (define (has-values? x y)
+    (and (has-value? x) (has-value? y)))
+
+  (define (set-average! n m avg caller)
+    (set-value! avg (/ (+ (get-value n) (get-value m)) 2) caller))
+
+  (define (set-participant c b a caller)
+    (set-value! a (- (* 2 (get-value c))
+                     (get-value b))
+                caller))
+
+  (define (process-new-value)
+    (cond ((has-values? a b) (set-average! a b c me))
+          ((has-values? a c) (set-participant! c a b me))
+          ((has-values? b c) (set-participant! c b a me))))
+
+  (define (process-forget-value)
+    (forget-value! a me)
+    (forget-value! b me)
+    (forget-value! c me)
+    (process-new-value))
+
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value) (process-new-value))
+          ((eq? request 'I-lost-my-value) (process-forget-value))
+          (else (error "Unknown request AVERAGER" request))))
+
+  (connect a me)
+  (connect b me)
+  (connect c me)
+  me)
+
+;; using multiplier, adder, and consants
+(define (averager a b c)
+  ;; Specifies that the three connectors, a, b, and c be related by the equation
+  ;; (a + b) = 2 * c
+  (let ((d (make-connector))
+        (e (make-connector)))
+    (constant 2 d)
+    (adder a b e)
+    (multiplier d c e)
+    'ok))
