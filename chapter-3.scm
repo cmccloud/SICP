@@ -1621,26 +1621,30 @@
 
 ;; Exercise 3.37
 (define (c+ x y)
+  ;; x + y = z
   (let ((z (make-connector)))
     (adder x y z)
     z))
 
 (define (c- x y)
+  ;; x - y = c -> c + y = x
   (let ((c (make-connector)))
     (adder c y x)
     c))
 
 (define (c* x y)
+  ;; x * y = z
   (let (z (make-connector))
     (multiplier x y z)
     z))
 
 (define (c/ x y)
-  (let ((c (make-connector)))
-    (multiplier c y x)
-    c))
+  ;; x / y = z -> z * y = x
+  (let ((z (make-connector)))
+    (multiplier z y x)
+    z))
 
 (define (cv x)
-  (let ((c (make-connector)))
-    (constant x c)
-    c))
+  (let ((z (make-connector)))
+    (constant x z)
+    z))
