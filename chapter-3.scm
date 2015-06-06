@@ -1618,6 +1618,8 @@
   me)
 
 ;; Exercise 3.36 - Diagram
+
+;; Exercise 3.37
 (define (c+ x y)
   (let ((z (make-connector)))
     (adder x y z)
