@@ -1618,3 +1618,27 @@
   me)
 
 ;; Exercise 3.36 - Diagram
+(define (c+ x y)
+  (let ((z (make-connector)))
+    (adder x y z)
+    z))
+
+(define (c- x y)
+  (let ((c (make-connector)))
+    (adder c y x)
+    c))
+
+(define (c* x y)
+  (let (z (make-connector))
+    (multiplier x y z)
+    z))
+
+(define (c/ x y)
+  (let ((c (make-connector)))
+    (multiplier c y x)
+    c))
+
+(define (cv x)
+  (let ((c (make-connector)))
+    (constant x c)
+    c))
