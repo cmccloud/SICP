@@ -1587,21 +1587,13 @@
 
 ;; Exercise 3.34
 ;; Proposed Squarer (define (squarer a b) (multiplier a a b))
-;; The flaw is that our entire system relies on the uniquness of
-;; participants in a given constraint.
-;; Consider the example of (multiplier x y product)
-;; Because the first two participants have the same identity
-;; outside changes to product will always result in contradiction::
-;; if a has a value, then, from the perspective of the multiplier,
-;; both x and y will have values, and so the value processing procedure
-;; will attempt to set the value of b immediately back to its old value
-;; E.G. a = 5, b = 25 (multiplier a a b)
-;; b -> 36
-;; (multiplier has-value? x (a) = true)
-;; (multiplier has-value? y (a) = true)
-;; (multiplier set-value! product (b) to * a a) -> b -> 25
+;; Assuming a system in which both a and b are value-less connectors,
+;; in the above solution, a change to a would correctly propagate to b
+;; however a change to be would not trigger a change in a, because
+;; relative to the multiplier, both x and y remain value-less
 
 ;; Exercise 3.35
+
 (define (squarer a b)
   ;; Specifies that connectors a and b be related by the equation
   ;; a * a = b
@@ -1624,3 +1616,5 @@
   (connect a me)
   (connect b me)
   me)
+
+;; Exercise 3.36 - Diagram
