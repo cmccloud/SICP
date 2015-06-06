@@ -1411,8 +1411,8 @@
   ;; Specifies that the quantities x, y, and product must be related by the
   ;; equation :: x * y = product
   (define (mul-by-zero? a b)
-    (or (and (has-value? a) (= (get-value b) 0))
-        (and (has-value? b) (= (get-value a) 0))))
+    (or (and (has-value? a) (= (get-value a) 0))
+        (and (has-value? b) (= (get-value b) 0))))
 
   (define (has-values? x y)
     (and (has-value? x) (has-value? y)))
@@ -1421,13 +1421,13 @@
     (set-value! product (* (get-value mul1) (get-value mul2)) caller))
 
   (define (set-quotient! numer denom quotient caller)
-    (set-value! qoutient (/ (get-value numer) (get-value denom)) caller))
+    (set-value! quotient (/ (get-value numer) (get-value denom)) caller))
 
   (define (process-new-value)
     (cond ((mul-by-zero? x y) (set-value! product 0 me))
           ((has-values? x y) (set-product! x y product me))
-          ((has-values? x product) (set-quotient! x product y me))
-          ((has-values? y product) (set-quotient! y product x me))))
+          ((has-values? x product) (set-quotient! product x y me))
+          ((has-values? y product) (set-quotient! product y x me))))
 
   (define (process-forget-value)
     (forget-value! product me)
@@ -1634,17 +1634,29 @@
 
 (define (c* x y)
   ;; x * y = z
-  (let (z (make-connector))
+  (let ((z (make-connector)))
     (multiplier x y z)
     z))
 
 (define (c/ x y)
   ;; x / y = z -> z * y = x
   (let ((z (make-connector)))
-    (multiplier z y x)
+    (multiplier y z x)
     z))
 
 (define (cv x)
   (let ((z (make-connector)))
     (constant x z)
     z))
+
+;; Run simulation
+(define (celsius-fahrenheit-converter x)
+  (c+ (c* (c/ (cv 9) (cv 5))
+          x)
+      (cv 32)))
+(define C (make-connector))
+(define F (celsius-fahrenheit-converter C))
+(probe 'C C)
+(probe 'F F)
+(set-value! F 92 'user)
+
