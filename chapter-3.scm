@@ -1584,3 +1584,43 @@
     (adder a b e)
     (multiplier d c e)
     'ok))
+
+;; Exercise 3.34
+;; Proposed Squarer (define (squarer a b) (multiplier a a b))
+;; The flaw is that our entire system relies on the uniquness of
+;; participants in a given constraint.
+;; Consider the example of (multiplier x y product)
+;; Because the first two participants have the same identity
+;; outside changes to product will always result in contradiction::
+;; if a has a value, then, from the perspective of the multiplier,
+;; both x and y will have values, and so the value processing procedure
+;; will attempt to set the value of b immediately back to its old value
+;; E.G. a = 5, b = 25 (multiplier a a b)
+;; b -> 36
+;; (multiplier has-value? x (a) = true)
+;; (multiplier has-value? y (a) = true)
+;; (multiplier set-value! product (b) to * a a) -> b -> 25
+
+;; Exercise 3.35
+(define (squarer a b)
+  ;; Specifies that connectors a and b be related by the equation
+  ;; a * a = b
+  (define (process-new-value)
+    (if (has-value? b)
+        (if (< (get-value b) 0)
+            (error "square less than 0: SQUARER"
+                   (get-value b))
+            (set-value! a (sqrt (get-value b)) me)))
+    (if (has-value? a)
+        (set-value! b (square (get-value a)) me)))
+  (define (process-forget-value)
+    (forget-value! b me)
+    (forget-value! a me)
+    (process-new-value))
+  (define (me request)
+    (cond ((eq? request 'I-have-a-value) (process-new-value))
+          ((eq? request 'I-lost-my-value) (process-forget-value))
+          (else (error "Unknown operation SQUARER" request))))
+  (connect a me)
+  (connect b me)
+  me)
