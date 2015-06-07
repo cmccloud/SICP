@@ -1869,9 +1869,40 @@
              (release))
             (else (error "Unknown Procedure SEMAPHORE" m))))
 
-    the-semaphore)
+    the-semaphore))
 ;; b.
+(define (make-semaphore n)
 
+  (define (clear! cell)
+    (set-car! cell false))
+
+  (define (test-and-set! cell)
+    (if (car cell) true
+        (begin
+          (set-car! cell true)
+          false)))
+
+  (let ((cell (list false))
+        (count 0))
+
+    (define (acquire)
+      (if (test-and-set! cell) (acquire)))
+
+    (define (the-semaphore m)
+      (cond ((equal? m 'acquire)
+             (acquire)
+             (cond ((= count n)
+                    (clear! cell)
+                    (the-semaphore 'acquire))
+                   (else
+                    (set! count (inc count))
+                    (clear! cell))))
+            ((equal? m 'release)
+             (acquire)
+             (set! count (max 0 (dec count)))
+             (clear! cell))))
+
+    the-semaphore))
 ;; Exercise 3.48
 
 ;; Exercise 3.49
