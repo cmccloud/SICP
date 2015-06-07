@@ -1837,6 +1837,39 @@
 
 ;; Exercise 3.47
 ;; a.
+(define (make-semaphore n)
+  (let ((mutex (make-mutex))
+        (count 0))
+
+    (define (acquire)
+      ;; If the maximum number of leases has been reached
+      ;; We release the mutex and retry the acquire procedure
+      (cond ((= count n)
+             (the-mutex 'release)
+             (the-semaphore 'acquire))
+            ;; Otherwise we increment the number of active leases
+            ;; And release the mutex
+            (else
+             (set! count (inc count))
+             (the-mutex 'release))))
+
+    (define (release)
+      (set! count (max 0 (dec count)))
+      (the-mutex 'release))
+
+    (define (the-semaphore m)
+      ;; Prior to running any operation we first acquire the mutex
+      ;; Each operation is responsible for then releasing the mutex
+      ;; on completion
+      (cond ((eq? m 'acquire)
+             (the-mutex 'acquire)
+             (acquire))
+            ((eq? m 'release)
+             (the-mutex 'acquire)
+             (release))
+            (else (error "Unknown Procedure SEMAPHORE" m))))
+
+    the-semaphore)
 ;; b.
 
 ;; Exercise 3.48
