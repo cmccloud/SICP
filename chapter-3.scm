@@ -1723,3 +1723,74 @@
 (allow-preempt-current-thread)
 (define t (parallel-execute (lambda () (set! a (fib 30))) (lambda () (set! a 0))))
 ;; (t) to terminate threads
+
+;; Exercise 3.39
+;; 101 :: P[1] sets x to 100 and then P[2] sets x to 101
+;; 121 :: P[2] sets x to 11 adn then P[1] sets x to 121
+;; 100 :: P[1] computes the value of 100 while x = 10, P[2] then sets x to 11,
+;; and finally P[1] sets x to 100
+
+;; Exercise 3.40
+;; 1000000 :: P[1] sets x to 100 and then P[2] sets x to 1000000 OR
+;; P[2] sets x to 100 and then P[1] sets x to 1000000
+;; 100000 :: P[2] accesses x once at a value of 10, and twice at a value of 100
+;; and sets to 100000
+;; 10000 :: P[1] accesses x once at a value of 10, and then a second time at a value of 1000
+;; and sets x to 10000 OR
+;; P[2] accesses x twice at 10 and once at 100 and sets x to 10000
+;; 1000 :: P[1] sets x to 100 - P[2] accesses x three times at 10
+;; and sets x to 1000
+;; 100 :: P[1] accesses x twice at 100, P[2] sets x to 1000, and then P[1] sets x to 100
+
+;; Using the serializer, the only possible result is 100000
+;; Either 100 * 100 * 100 or 1000 * 1000
+
+;; Exercise 3.41
+;; I don't share Ben's concern
+
+;; Exercise 3.42
+;; The answer here depends on how exactly the serializer determines what
+;; it means for a member of the serialized set to be executing -
+;; Using Ben's changes, there will now exist exactly two procedures
+;; as members of the serialized set - while it's still true that withdraw
+;; and deposit would be unable to run concurrently, it might be the case that
+;; multiple calls to either would be able to run simultaneously
+;; E.G. given a serialized set S of exactly one member, f
+;; one possibility is that, prior to executing f, the procedure
+;; checks if f is being executed. Another possibility is that prior
+;; to the execution of f, the procedure checks if any other members
+;; of S are being executed.
+
+;; We can come up with a test for this:
+
+;; We will attempt to make two parallel calls to test-one
+;; The first call to time-varying op (which might represent a network procedure)
+;; will execute more slowly than the second.
+;; Prior to this, however, the value of x will have already
+;; been passed to time-varying-operation for the computation of the result
+;; If test-one may not be run multiple times:
+;; The result will be that (p1 10) -> 100 -> (p2 100) -> 10000
+;; And Ben's proposed changes will be safe, I think.
+;; If test-one may be run multiple times:
+;; The result will be that (p1 10) (p2 10) -> 100 -> 100
+;; And Ben's proposed changes will not be safe.
+
+(define (test3-42)
+  (let ((protected (make-serializer))
+        (network-issues true))
+    (define x 10)
+    (define test-one (protected (lambda () (set! x (time-varying-op x)))))
+    (define (time-varying-op x)
+      (if network-issues
+          (begin
+            (set! network-issues false)
+            (fib 31)
+            (display "First call completed!")
+            (newline)
+            (* x x))
+          (begin
+            (fib 25)
+            (display "Second call completed")
+            (newline)
+            (* x x)))))
+  (parallel-execute test-one test-one))
