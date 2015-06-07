@@ -1794,3 +1794,51 @@
             (newline)
             (* x x)))))
   (parallel-execute test-one test-one))
+
+;; Exercise 3.43 - Diagram
+
+;; Exercise 3.44
+;; I don't think we need a more sophisticated implementation in this case
+;; The fundamental difference between this and the balance exchanger is that
+;; we're no longer querying the local mutable state of the account
+;; prior to modifying it.
+
+;; Exercise 3.45
+;; Now, a call to serialized exchange procedures a procedure which is blocking
+;; for both account1 and account2 - when this procedure executes,
+;; it's internal calls to the withdraw procedures from the respective accounts
+;; will be unable to proceed.
+
+(define (make-serializer)
+  (let ((mutex (make-mutex)))
+    (lambda (p)
+      (define (serialized-p . args)
+        (mutex 'acquire)
+        (let ((val (apply p args)))
+          (mutex 'release)
+          val))
+      serialized-p)))
+
+(define (make-mutex)
+  (let ((cell (list false)))
+    (define (the-mutex m)
+      (cond ((eq? m 'acquire)
+             (if (test-and-set! cell)
+                 (the-mutex 'acquire)))
+            ((eq? m 'release) (clear! cell))))
+    the-mutex))
+
+(define (clear! cell) (set-car! cell false))
+
+(define (test-and-set! cell)
+  (if (car cell) true (begin (set-car! cell true) false)))
+
+;; Exercise 3.46 - Diagram
+
+;; Exercise 3.47
+;; a.
+;; b.
+
+;; Exercise 3.48
+
+;; Exercise 3.49
