@@ -2031,6 +2031,7 @@
 
 (define (integers-from n) (cons-stream n (integers-from (inc n))))
 (define (fibgen a b) (cons-stream a (fibgen b (+ a b))))
+(define fibs (fibgen 0 1))
 
 (define (sieve stream)
   (cons-stream
@@ -2107,3 +2108,17 @@
             (merge-stream
              (scale-stream s 3)
              (scale-stream s 5)))))
+
+;; Exercise 3.57
+;; fibs is linear with respect to n
+;; we perform n - 2 calculations
+;; Had we not memoized the results
+;; we would perform n*n calculations
+
+;; Exercise 3.58
+(define (expand num den radix)
+  (cons-stream
+   (quotient (* num radix) den)
+   (expand (remainder (* num radix) den) den radix)))
+;; Expand computes division of num by den given a base radix
+;; number system.
