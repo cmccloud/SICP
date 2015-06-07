@@ -1670,3 +1670,56 @@
 ;; - half, - 20, + 10 :: 40
 
 ;; b. - Diagram
+
+;; Parallel-execute implementation for concurrency exercises
+
+(define disallow-preempt-current-thread
+  (access disallow-preempt-current-thread
+	  (->environment '(runtime thread))))
+
+(define allow-preempt-current-thread
+  (access allow-preempt-current-thread
+	  (->environment '(runtime thread))))
+
+(define (parallel-execute . thunks)
+  (let ((my-threads '()))
+
+    ;; Thread Execution
+    (define (create-process proc)
+      (let ((thread (create-thread #f proc)))
+        (detach-thread thread)
+        thread))
+
+    (define (run)
+      (set! my-threads (map create-process thunks))
+      unspecific)
+
+    ;; Thread Terminator
+    (define (event) (exit-current-thread 'RIP))
+
+    (define (thread-status thread event)
+      (lambda ()
+        (case (thread-execution-state thread)
+          ((STOPPED) (restart-thread thread #t event))
+          ((DEAD) unspecific)
+          (else (signal-thread-event thread event)))))
+
+    (define (kill-thread thread)
+      (without-interrupts (thread-status thread event)))
+
+    (define (terminator)
+      (without-interrupts
+       (lambda ()
+         (for-each kill-thread my-threads)
+         (set! my-threads '())
+         unspecific)))
+
+    (without-interrupts run)
+    terminator))
+
+;; Tests
+(define a 10)
+(define (fib n) (if (<= n 1) n (+ (fib (- n 1)) (fib (- n 2)))))
+(allow-preempt-current-thread)
+(define t (parallel-execute (lambda () (set! a (fib 30))) (lambda () (set! a 0))))
+;; (t) to terminate threads
