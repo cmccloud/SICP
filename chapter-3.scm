@@ -2193,3 +2193,40 @@
   (define b (div-series sine-series cosine-series))
   (define c (stream-map list a b))
   (stream-every-till-n 100 (lambda (x) (= (car x) (cadr x))) c))
+
+;; Exercise 3.63
+;; Louis's proposed changes would result in each call generating a new
+;; stream object - denying us the benefit of our memoization
+;; Excluding that fact, the only loss in performance would be in the
+;; creation of new procedure frames and their persistance in memory
+
+;; Exercise 3.64
+(define (average x y)
+  (/ (+ x y) 2))
+
+(define (sqrt-improve guess x)
+  (average guess (/ x guess)))
+
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream
+     1.0 (stream-map (lambda (g) (sqrt-improve g x)) guesses)))
+  guesses)
+
+(define (stream-limit s d)
+  (cond ((stream-null? s) #f)
+        ((> d (abs (- (stream-car s)
+                      (stream-car (stream-cdr s)))))
+         (stream-car (stream-cdr s)))
+        (else (stream-limit (stream-cdr s) d))))
+
+;; Exercise 3.65
+(define neg-pos
+  (cons-stream -1 (scale-stream neg-pos -1)))
+
+(define log2
+  (cons-stream
+   1 (stream-map * neg-pos
+                 (stream-map / ones (stream-cdr integers)))))
+
+
