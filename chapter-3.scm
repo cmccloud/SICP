@@ -1903,6 +1903,174 @@
              (clear! cell))))
 
     the-semaphore))
-;; Exercise 3.48
 
-;; Exercise 3.49
+;; Exercise 3.48 - TODO
+
+;; Exercise 3.49 - TODO
+
+;; 3.5 - Streams
+;; Stream Primitives
+;; stream-car, stream-cdr, cons-stream, stream-null?, the-empty-stream
+
+(define (_stream-ref s n)
+  (if (= n 0)
+      (stream-car s)
+      (_stream-ref (stream-cdr s) (dec n))))
+
+(define (_stream-map f s)
+  (if (stream-null? s)
+      the-empty-stream
+      (cons-stream (f (stream-car s))
+                   (_stream-map f (stream-cdr s)))))
+
+(define (_stream-for-each f s)
+  (if (stream-null? s) nil
+      (begin (f (stream-car s))
+             (_stream-for-each f (stream-cdr s)))))
+
+(define (display-line x)
+  (newline) (display x))
+
+(define (display-m x)
+  (display x) (display " "))
+
+(define (display-stream s)
+  (display "STREAM : ( ")
+  (stream-for-each display-m s)
+  (display ")"))
+
+;; At this level of abstraction, the critical distinction between a stream
+;; and a list is that with streams, the cdr is evaluated when it is accessed
+;; by stream-cdr rather than when the stream is constructed by cons-stream
+(define (_cons-stream a b) (cons a (delay b)))
+
+(define (_car-stream s) (car s))
+
+(define (_cdr-stream s) (force (cdr s)))
+
+;; Note that the actual implementation of cons-stream must be a special form
+;; in order to prevent the second argument in a call from being evaluated
+;; prior to binding it with the formal parameter b. For the same reason
+;; force must also be a special form.
+
+(define (stream-range n m)
+  (if (> n m) the-empty-stream
+      (cons-stream n (stream-range (inc n) m))))
+
+(define (stream-every p? s)
+  (cond ((stream-null? s) #t)
+        ((p? (stream-car s)) (stream-every p? (stream-cdr s)))
+        (else #f)))
+
+(define (_stream-filter p? s)
+  (if (stream-null? s) the-empty-stream
+      (let ((x (stream-car s)))
+        (if (p? x) (cons-stream x (_stream-filter p? (stream-cdr s)))
+            (_stream-filter p? (stream-cdr s))))))
+
+;; Example Exercise
+(define (inc x) (+ x 1))
+
+(define (dec x) (- x 1))
+
+(define (gcd a b)
+  (if (= b 0) a
+      (gcd b (remainder a b))))
+
+(define (prime? n)
+  (cond ((<= n 1) #f)
+        ((= n 2) #t)
+        (else (stream-every (lambda (d) (= (gcd n d) 1))
+                     (stream-range 2 (inc (floor (sqrt n))))))))
+
+(define (stream-primes n m)
+  ;; Returns a list of all of the primes between n and m, inclusive.
+  (stream-filter prime? (stream-range n m)))
+
+(define my-primes (cons-stream 10007 (stream-primes 10008 10100)))
+
+;; my-primes is now (cons 10007 (delay (stream-primes 10008 10100)))
+(stream-ref my-primes 1)
+;; stream-ref forces the evaluation of the cdr of my-primes
+;; (stream-primes 10008 10100)
+;; (stream-filter prime? (stream-range 10008 10100))
+;; (stream-filter prime? (cons 10008 (delay (stream-range 10009 10100))))
+;; (prime? 10008) -> f
+;; (stream-filter prime? (stream-range 10009 10100))
+;; (stream-filter prime? (cons 10009 (delay (stream-range 10010 10100))))
+;; (prime? 10009) -> t :: returns new car to stream-primes
+;; (stream-primes 10008 10100) -> (cons 10009 (delay (stream-filter? prime...)))
+;; (stream-ref (cons 10009 (delay....)) 0) -> 10009
+;; We have done exactly as much work as we needed and no more
+
+;; Implementing delay and force
+;; Delay can be a special form such that (delay <exp>) is syntactic sugar for
+;; (lambda () <exp>)
+;; Force is simply (define (force x) (x))
+
+(define (memo-proc proc)
+  (let ((already-run? false) (result false))
+    (lambda ()
+      (if (not already-run?)
+          (begin (set! result (proc))
+                 (set! already-run? true)
+                 result)
+          result))))
+
+;; Exercise 3.50
+(define (stream-map f . streams)
+  (if (stream-null? (car streams)) the-empty-stream
+      (cons-stream (apply f (map stream-car streams))
+                   (apply stream-map
+                          (cons f (map stream-cdr streams))))))
+
+;; Exercise 3.51
+(define (show x) (display-line x) x)
+
+;; Exercise 3.52 - TODO
+
+(define (integers-from n) (cons-stream n (integers-from (inc n))))
+(define (fibgen a b) (cons-stream a (fibgen b (+ a b))))
+
+(define (sieve stream)
+  (cons-stream
+        (stream-car stream)
+        (sieve (stream-filter
+                (lambda (x) (not (divisible? x (stream-car stream))))
+                (stream-cdr stream)))))
+
+(define primes (sieve (integers-from 2)))
+
+(define (add-streams s1 s2) (stream-map + s1 s2))
+
+(define ones (cons-stream 1 ones))
+
+(define integers
+  (cons-stream 1 (add-streams ones integers)))
+
+(define (pos? n) (> n 0))
+
+(define (neg? n) (< n 0))
+
+;; Exercise 3.53
+;; (1 2 4 8 16 32 ..... )
+(define (print-stream-until s n)
+  (define (iter s n)
+    (cond ((= n 1) (display (stream-car s)))
+          ((pos? n) (display (stream-car s)) (display " ")
+           (iter (stream-cdr s) (dec n)))))
+  (display "STREAM: (")
+  (iter s n)
+  (display ")"))
+
+;; Exercise 3.54
+(define (mul-streams s1 s2) (stream-map * s1 s2))
+(define factorials (cons-stream 1 (mul-streams factorials (stream-cdr integers))))
+
+;; Exercise 3.55
+(define (partial-sums s)
+  (cons-stream (stream-car s)
+               (add-streams (partial-sums s)
+                            (stream-cdr s))))
+
+;; Exercise 3.56
