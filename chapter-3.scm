@@ -2122,3 +2122,41 @@
    (expand (remainder (* num radix) den) den radix)))
 ;; Expand computes division of num by den given a base radix
 ;; number system.
+
+;; Exercise 3.59
+;; a.
+(define (divide-streams s1 s2)
+  (stream-map / s1 s2))
+(define (integrate-series s)
+  (divide-streams s integers))
+(define exp-series
+  (cons-stream 1 (integrate-series exp-series)))
+;; b
+(define sine-series (cons-stream 0 (integrate-series cosine-series)))
+(define cosine-series (cons-stream 1 (scale-stream
+                                      (integrate-series sine-series)
+                                      -1)))
+
+;; Exercise 3.60
+(define (mul-series s1 s2)
+  (cons-stream (* (stream-car s1) (stream-car s2))
+               (add-streams
+                (add-streams (scale-stream (stream-cdr s1)
+                                           (stream-car s2))
+                             (scale-stream (stream-cdr s2)
+                                           (stream-car s1)))
+                (cons-stream 0 (mul-series (stream-cdr s1)
+                                           (stream-cdr s2))))))
+
+;; tests
+(define (test3-60)
+  (define (stream-every-till-n n p? s)
+    (cond ((= n 0) #t)
+          ((stream-null? s) #t)
+          ((p? (stream-car s))
+           (stream-every-till-n (dec n) p? (stream-cdr s)))
+          (else #f)))
+  (define one (add-streams (mul-series sine-series sine-series)
+                          (mul-series cosine-series cosine-series)))
+  (and (= 1 (stream-car one))
+       (stream-every-till-n 100 (partial = 0) (stream-cdr one))))
