@@ -2074,3 +2074,36 @@
                             (stream-cdr s))))
 
 ;; Exercise 3.56
+(define (merge-stream s1 s2)
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+         (let ((car-1 (stream-car s1))
+               (car-2 (stream-car s2)))
+           (cond ((< car-1 car-2)
+                  (cons-stream
+                   car-1
+                   (merge-stream (stream-cdr s1) s2)))
+                 ((> car-1 car-2)
+                  (cons-stream
+                   car-2
+                   (merge-stream s1 (stream-cdr s2))))
+                 (else
+                  (cons-stream
+                   car-1
+                   (merge-stream (stream-cdr s1)
+                          (stream-cdr s2)))))))))
+
+(define (partial f . args)
+  (lambda x (apply f (append args x))))
+
+(define (scale-stream s factor)
+  (stream-map (partial * factor) s))
+
+(define s (cons-stream
+           1
+           (merge-stream
+            (scale-stream s 2)
+            (merge-stream
+             (scale-stream s 3)
+             (scale-stream s 5)))))
