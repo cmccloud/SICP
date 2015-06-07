@@ -1792,8 +1792,8 @@
             (fib 25)
             (display "Second call completed")
             (newline)
-            (* x x)))))
-  (parallel-execute test-one test-one))
+            (* x x))))
+    (parallel-execute test-one test-one)))
 
 ;; Exercise 3.43 - Diagram
 
