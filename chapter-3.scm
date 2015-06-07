@@ -2178,6 +2178,8 @@
                       (scale-stream den (/ 1 c))))
          (/ 1 c)))))
 
+(define tangent-series (div-series sine-series cosine-series))
+
 ;; tests
 (define (test3-62)
   (define (stream-every-till-n n p? s)
