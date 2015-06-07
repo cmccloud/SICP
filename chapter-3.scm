@@ -2160,3 +2160,34 @@
                           (mul-series cosine-series cosine-series)))
   (and (= 1 (stream-car one))
        (stream-every-till-n 100 (partial = 0) (stream-cdr one))))
+
+;; Exercise 3.61
+(define (invert-unit-series s)
+  (define inverted
+    (cons-stream
+     1 (scale-stream (mul-series inverted (stream-cdr s)) -1)))
+  inverted)
+
+;; Exercise 3.62
+(define (div-series num den)
+  (let ((c (stream-car den)))
+    (if (= c 0) (error "Invalid constant term DIV-SERIES" c)
+        (scale-stream
+         (mul-series num
+                     (invert-unit-series
+                      (scale-stream den (/ 1 c))))
+         (/ 1 c)))))
+
+;; tests
+(define (test3-62)
+  (define (stream-every-till-n n p? s)
+    (cond ((= n 0) #t)
+          ((stream-null? s) #t)
+          ((p? (stream-car s))
+           (stream-every-till-n (dec n) p? (stream-cdr s)))
+          (else #f)))
+  (define a (div-series (scale-stream sine-series 10)
+                        (scale-stream cosine-series 10)))
+  (define b (div-series sine-series cosine-series))
+  (define c (stream-map list a b))
+  (stream-every-till-n 100 (lambda (x) (= (car x) (cadr x))) c))
