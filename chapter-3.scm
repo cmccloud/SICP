@@ -2468,6 +2468,17 @@
 
 
 ;; Exercise 3.75
+(define (pos? x) (> x 0))
+
+(define (neg? x) (< x 0))
+
+(define (zero? x) (= x 0))
+
+(define (sign-change-detector y x)
+  (cond ((and (pos? x) (neg? y)) -1)
+        ((and (neg? x) (pos? y)) 1)
+        (else 0)))
+
 (define (make-zero-crossings input-s last-v last-avg)
   (let ((avg (/ (+ (stream-car input-s)
                    last-v)
@@ -2476,3 +2487,32 @@
      (sign-change-detector avg last-avg)
      (make-zero-crossings
       (stream-cdr input-s) (stream-car input-s) avg))))
+
+;; Exercise 3.76
+(define (smooth s)
+  ;; smooth takes as its only argument a stream, and returns a stream
+  ;; in which each element is the average of two successive input stream
+  ;; elements
+   (scale-stream (add-streams s (stream-cdr s)) (/ 1 2)))
+
+(define (make-zero-crossings input-s)
+  (stream-map sign-change-detector
+              (smooth input-s)
+              (smooth (cons-stream 0 input-s))))
+
+(define rand-inputs
+  (stream-map
+   (lambda (x)
+     (let ((n (random 3)))
+       (if (even? n) (* x n)
+           (* x n -1)))) ones))
+
+(define (test3-76)
+  (define doubles (cons-stream 1 (stream-map (partial * 2) doubles)))
+  (define smoothed (smooth doubles))
+  (define target (+ (stream-ref doubles 10)
+                    (stream-ref doubles 9)))
+  (define test-stream (stream 1 2 1.5 1 .5 -0.1 -2 -3 -2 -0.5 0.2 3 4))
+  (define target-crossings (list 0 0 0 0 0 -1 0 0 0 0 1 0))
+  (define test-crossings (make-zero-crossings test-stream))
+  (equal? target-crossings (partial-stream->list 13 test-crossings)))
