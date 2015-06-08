@@ -2548,3 +2548,14 @@
   (define dy (integral (delay ddy) dy0 dt))
   (define ddy (stream-map f dy y))
   y)
+
+;; Exercise 3.80
+(define (RLC R L C dt)
+  (lambda (vc0 il0)
+    (define il (integral (delay di) il0 dt))
+    (define vc (integral (delay dvc) vc0 dt))
+    (define dvc (scale-stream il (/ -1 C)))
+    (define di (add-streams
+                (scale-stream vc (/ 1 L))
+                (scale-stream il (- (/ R L)))))
+    (stream-map cons vc il)))
