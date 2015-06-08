@@ -2533,3 +2533,11 @@
 (define (test3-77)
   (= (stream-ref (solve (lambda (y) y) 1 0.001) 1000)
      2.716923932235896))
+
+;; Exercise 3.78
+(define (solve-2nd a b dt y0 dy0)
+  (define y (integral (delay dy) y0 dt))
+  (define dy (integral (delay ddy) dy0 dt))
+  (define ddy (add-streams (scale-stream dy a)
+                           (scale-stream y b)))
+  y)
