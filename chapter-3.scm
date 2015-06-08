@@ -2371,18 +2371,47 @@
   (+ (expt (car pair) 3) (expt (cadr pair) 3)))
 
 (define ramanujan-numbers
-  (let* ((x (weighted-pairs integers integers weight-c))
-        (y (stream-cdr x))
-        (z (stream-map list x y)))
-    (stream-filter (lambda (x) (= (weight-c (car x)) (weight-c (cadr x)))) z)))
+  (let* ((x (weighted-pairs integers integers weight-c)))
+    (stream-filter
+     (lambda (x) (= (weight-c (car x)) (weight-c (cadr x))))
+     (stream-map list x (stream-cdr x)))))
 
-(define (_stream->list n s)
+(define (partial-stream->list n s)
   (if (or (= n 0) (stream-null? s))
       nil
       (cons (stream-car s)
-            (_stream->list (dec n) (stream-cdr s)))))
+            (partial-stream->list (dec n) (stream-cdr s)))))
 
-(define first-five-ram
+(define (first-n-ram n)
   (map (lambda (x)
          (+ (expt (car (car x)) 3) (expt (cadr (car x)) 3)))
-       (_stream->list 5 ramanujan-numbers)))
+       (partial-stream->list n ramanujan-numbers)))
+
+;; Exercise 3.72
+;; Made a mistake - Thought the question asked for a stream of all numbers
+;; that can be written as the sum of three squares in three difference ways
+;; Two would have been much easier.
+(define (weight-d triplet)
+  (+ (expt (car triplet) 2) (expt (cadr triplet) 2) (expt (caddr triplet) 2)))
+
+(define (weighted-triples weight s t u)
+  (cons-stream
+   (list (stream-car s) (stream-car t) (stream-car u))
+   (merge-weighted weight
+    (stream-map (lambda (x) (list (stream-car s) (stream-car t) x)) (stream-cdr u))
+    (merge-weighted weight
+     (stream-map (lambda (x) (list (stream-car s) (stream-car (stream-cdr t)) x)) (stream-cdr u))
+     (weighted-triples weight (stream-cdr s) (stream-cdr t) (stream-cdr u))))))
+
+(define solution-stream
+  (let ((x (weighted-triples weight-d integers integers integers)))
+    (stream-filter
+     (lambda (x) (= (weight-d (car x)) (weight-d (cadr x)) (weight-d (caddr x))))
+     (stream-map list x (stream-cdr x) (stream-cdr (stream-cdr x))))))
+
+(define (first-n-solution n)
+  (map (lambda (x)
+         (let ((y (car x)))
+           (let ((z (+ (square (car y)) (square (cadr y)) (square (caddr y)))))
+             (cons z x))))
+       (partial-stream->list n solution-stream)))
