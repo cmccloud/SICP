@@ -2365,3 +2365,24 @@
   (stream-filter (lambda (x) (every (lambda (n) (not (divisible? x n))) '(2 3 5))) integers))
 
 (define solution-b (weighted-pairs input-b input-b weight-b))
+
+;; Exercise 3.71
+(define (weight-c pair)
+  (+ (expt (car pair) 3) (expt (cadr pair) 3)))
+
+(define ramanujan-numbers
+  (let* ((x (weighted-pairs integers integers weight-c))
+        (y (stream-cdr x))
+        (z (stream-map list x y)))
+    (stream-filter (lambda (x) (= (weight-c (car x)) (weight-c (cadr x)))) z)))
+
+(define (_stream->list n s)
+  (if (or (= n 0) (stream-null? s))
+      nil
+      (cons (stream-car s)
+            (_stream->list (dec n) (stream-cdr s)))))
+
+(define first-five-ram
+  (map (lambda (x)
+         (+ (expt (car (car x)) 3) (expt (cadr (car x)) 3)))
+       (_stream->list 5 ramanujan-numbers)))
