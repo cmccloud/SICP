@@ -2465,3 +2465,14 @@
   (stream-map sign-change-detector
               sense-data
               (cons-stream 0 sense-data)))
+
+
+;; Exercise 3.75
+(define (make-zero-crossings input-s last-v last-avg)
+  (let ((avg (/ (+ (stream-car input-s)
+                   last-v)
+                2)))
+    (cons-stream
+     (sign-change-detector avg last-avg)
+     (make-zero-crossings
+      (stream-cdr input-s) (stream-car input-s) avg))))
