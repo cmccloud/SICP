@@ -2415,3 +2415,23 @@
            (let ((z (+ (square (car y)) (square (cadr y)) (square (caddr y)))))
              (cons z x))))
        (partial-stream->list n solution-stream)))
+
+;; correct solution
+(define (weight-e pair)
+  (+ (square (car pair)) (square (cadr pair))))
+
+(define solution-stream
+  (let ((x (weighted-pairs integers integers weight-e)))
+    (stream-filter
+     (lambda (three-pairs)
+       (every (lambda (p) (= (weight-e p) (weight-e (car three-pairs)))) three-pairs))
+     (stream-map list x (stream-cdr x) (stream-cdr (stream-cdr x))))))
+
+(define (print-n-solutions n)
+  (for-each (lambda (pairs)
+              (newline)
+              (display (car pairs)) (newline)
+              (display (cadr pairs)) (newline)
+              (display (caddr pairs)) (newline)
+              (display (weight-e (car pairs))) (newline))
+            (partial-stream->list n solution-stream)))
