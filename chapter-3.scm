@@ -2559,3 +2559,24 @@
                 (scale-stream vc (/ 1 L))
                 (scale-stream il (- (/ R L)))))
     (stream-map cons vc il)))
+
+;; Exercise 3.82
+(define (new-rand n)
+  ;; uses the linear congruential generator
+  (let ((a (expt 2 31))
+        (c 1103515245)
+        (m 12345))
+    (modulo (+ (* a n) c) m)))
+
+(define (rand-stream req-stream)
+  ;; req-stream must be a stream pairs ('req value)
+  ;; where value is only observed if req = 'reset
+  (define (rand-dispatch req last-rand)
+    (cond ((eq? (car req) 'new) (new-rand last-rand))
+          ((eq? (car req) 'reset) (cdr req))
+          (else (error "Unknown request RANDOMS" req))))
+  (define randoms
+    (cons-stream
+     (new-rand 123)
+     (stream-map rand-dispatch req-stream randoms)))
+  randoms)
