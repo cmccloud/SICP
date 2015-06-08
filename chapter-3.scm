@@ -2279,6 +2279,18 @@
                                (stream-cdr b)
                                (stream-cdr c))))))))
 
+;; Alternative generic interleave
+(define (interleave . x)
+  (define (interleave-cycle args cycle)
+    (cond ((and (null? args) (null? cycle)) the-empty-stream)
+          ((null? args) (interleave-cycle (reverse cycle) args))
+          ((stream-null? (car args)) (interleave-cycle (cdr args) cycle))
+          (else
+           (cons-stream
+            (stream-car (car args))
+            (interleave-cycle (cdr args) (cons (stream-cdr (car args)) cycle))))))
+  (interleave-cycle x nil))
+
 (define (pairs s t)
   (cons-stream
    (list (stream-car s) (stream-car t))
@@ -2296,13 +2308,63 @@
 ;; to recur without stop.
 
 ;; Exercise 3.69
+
 (define (triples s t u)
   (cons-stream
-   (list (stream-car s) (stream-car t) (stream-car u))
+   (list (stream-car s) (stream-car t) (stream-car u)) ; 1 1 1
    (interleave-3
-    (stream-map (lambda (x) (list (stream-car s) (stream-car t) x))
+    (stream-map (lambda (x) (list (stream-car s) (stream-car t) x)) ; 1 1 2
                 (stream-cdr u))
-    (stream-map (lambda (x) (list (stream-car s) (stream-car (stream-cdr t)) x))
+    (stream-map (lambda (x) (list (stream-car s) (stream-car (stream-cdr t)) x)) ; 1 2 2
                 (stream-cdr u))
-    (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
+    (triples (stream-cdr s) (stream-cdr t) (stream-cdr u))))) ; 2 2 2
 
+(define py-triples
+  (stream-filter (lambda (x) (= (+ (square (car x)) (square (cadr x)))
+                                (square (caddr x))))
+                 (triples integers integers integers)))
+
+;; Exercise 3.70
+(define (merge-weighted weight s1 s2)
+
+  (define (ordered-stream head s1 s2)
+    (cons-stream head (merge-weighted weight s1 s2)))
+
+  (cond ((stream-null? s1) s2)
+        ((stream-null? s2) s1)
+        (else
+         (let ((a (stream-car s1))
+               (b (stream-car s2)))
+           (if (<= (weight a) (weight b))
+               (ordered-stream a (stream-cdr s1) s2)
+               (ordered-stream b s1 (stream-cdr s2)))))))
+
+(define (weighted-pairs s t weight)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (merge-weighted weight
+    (stream-map (lambda (x) (list (car s) x))
+                (stream-cdr t))
+    (weighted-pairs (stream-cdr s) (stream-cdr t) weight))))
+
+;; a
+(define (weight-a pair)
+  (+ (car pair) (cadr pair)))
+
+(define solution-a (weighted-pairs integers integers weight-a))
+
+;; b
+(define (weight-b pair)
+  (+ (* 2 (car pair))
+     (* 3 (cadr pair))
+     (* 5 (car pair) (cadr pair))))
+
+(define (divisible n m) (= (remainder n m) 0))
+
+(define (not-divis n args)
+  (every (lambda (m) (not (divisible? n m))) args))
+
+(define input-b
+  (stream-filter (lambda (x) (not-divis x '(2 3 5))) integers))
+
+(define solution-b (weighted-pairs input-b input-b weight-b))
