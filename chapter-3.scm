@@ -2229,4 +2229,80 @@
    1 (stream-map * neg-pos
                  (stream-map / ones (stream-cdr integers)))))
 
+;; Exercise 3.66
+;; The general pattern for make pairs is that a given steam of pairs ((x,y) (x,y +1) (x, y + 2))...
+;; occurs approximately half as frequently is the preceeding sequence of ((x-1, y) (x-1, y + 1))...
+;; The first occurace of 99 as the first member of a pair, then, will be preceeded by
+;; approximately (2 ^ 99) pairs. The second occurance of 99, which corresponds to (99, 100)
+;; appears after approximately half again as many pairs, or (2 ^ 98)
+;; The first occurance of 100 as the first member of a pair is also the pair of (100, 100)
+;; and occurs after approximately (2 ^ 100) other pairs
+
+;; The frequency of pairs where there first member is some number, n, across the infinite
+;; sequence of pairs is approximated by 2 ^ -n. From this we can expect that for a sequence
+;; of x length, pairs of (1, x) will make up 1/2x. So we would expect to see the 100th 1
+;; (1, 100) somewhere around the 200th element
+(define (make-ratio p? s n)
+  (define (iter count acc s)
+    (cond ((stream-null? s) (/ acc (- n count)))
+          ((= count 0) (/ acc n))
+          ((p? (stream-car s)) (iter (dec count) (inc acc) (stream-cdr s)))
+          (else (iter (dec count) acc (stream-cdr s)))))
+  (iter n 0 s))
+
+(define (pairs s t)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (interleave
+    (stream-map (lambda (x) (list (stream-car s) x))
+                (stream-cdr t))
+    (pairs (stream-cdr s) (stream-cdr t)))))
+
+;; Exercise 3.67
+
+(define (interleave s1 s2)
+  (if (stream-null? s1) s2
+      (cons-stream (stream-car s1)
+                   (interleave s2 (stream-cdr s1)))))
+
+(define (interleave-3 a b c)
+  (cond ((stream-null? a) (interleave b c))
+        ((stream-null? b) (interleave a c))
+        ((stream-null? c) (interleave a b))
+        (else (cons-stream
+               (stream-car a)
+               (cons-stream
+                (stream-car b)
+                (cons-stream
+                 (stream-car c)
+                 (interleave-3 (stream-cdr a)
+                               (stream-cdr b)
+                               (stream-cdr c))))))))
+
+(define (pairs s t)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (interleave-3
+    (stream-map (lambda (x) (list (stream-car s) x)) (stream-cdr t))
+    (stream-map (lambda (x) (list x (stream-car t))) (stream-cdr s))
+    (pairs (stream-cdr s) (stream-cdr t)))))
+
+;; Exercise 3.68
+(define (borken s t)
+  (interleave (stream-map (lambda (x) (list (stream-car s) x)) t)
+              (borken (stream-cdr s) (stream-cdr t))))
+
+;; Without the call to cons-stream to delay evaluation, borken continues
+;; to recur without stop.
+
+;; Exercise 3.69
+(define (triples s t u)
+  (cons-stream
+   (list (stream-car s) (stream-car t) (stream-car u))
+   (interleave-3
+    (stream-map (lambda (x) (list (stream-car s) (stream-car t) x))
+                (stream-cdr u))
+    (stream-map (lambda (x) (list (stream-car s) (stream-car (stream-cdr t)) x))
+                (stream-cdr u))
+    (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
 
