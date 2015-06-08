@@ -2362,7 +2362,9 @@
 (define (divisible? n m) (= (remainder n m) 0))
 
 (define input-b
-  (stream-filter (lambda (x) (every (lambda (n) (not (divisible? x n))) '(2 3 5))) integers))
+  (stream-filter
+   (lambda (x) (every (lambda (n) (not (divisible? x n))) '(2 3 5)))
+   integers))
 
 (define solution-b (weighted-pairs input-b input-b weight-b))
 
@@ -2397,10 +2399,15 @@
 (define (weighted-triples weight s t u)
   (cons-stream
    (list (stream-car s) (stream-car t) (stream-car u))
-   (merge-weighted weight
-    (stream-map (lambda (x) (list (stream-car s) (stream-car t) x)) (stream-cdr u))
-    (merge-weighted weight
-     (stream-map (lambda (x) (list (stream-car s) (stream-car (stream-cdr t)) x)) (stream-cdr u))
+   (merge-weighted
+    weight
+    (stream-map
+     (lambda (x) (list (stream-car s) (stream-car t) x)) (stream-cdr u))
+    (merge-weighted
+     weight
+     (stream-map
+      (lambda (x) (list (stream-car s) (stream-car
+                                        (stream-cdr t)) x)) (stream-cdr u))
      (weighted-triples weight (stream-cdr s) (stream-cdr t) (stream-cdr u))))))
 
 (define solution-stream
@@ -2424,14 +2431,31 @@
   (let ((x (weighted-pairs integers integers weight-e)))
     (stream-filter
      (lambda (three-pairs)
-       (every (lambda (p) (= (weight-e p) (weight-e (car three-pairs)))) three-pairs))
+       (every (parital = (weight-e (car thee-pairs))) three-pairs))
      (stream-map list x (stream-cdr x) (stream-cdr (stream-cdr x))))))
 
 (define (print-n-solutions n)
   (for-each (lambda (pairs)
               (newline)
-              (display (car pairs)) (newline)
-              (display (cadr pairs)) (newline)
-              (display (caddr pairs)) (newline)
-              (display (weight-e (car pairs))) (newline))
+              (display "Square 1: ") (display (car pairs)) (newline)
+              (display "Square 2: ") (display (cadr pairs)) (newline)
+              (display "Square 3: ") (display (caddr pairs)) (newline)
+              (display "Value: ") (display (weight-e (car pairs))) (newline))
             (partial-stream->list n solution-stream)))
+
+;; Streams as signals
+
+;; Exercise 3.73
+(define (integral integrand initial-value dt)
+  (define int
+    (cons-stream initial-vaue
+                 (add-streams (scale-stream integrand dt)
+                              int)))
+  int)
+
+(define (RC R C dt)
+  (lambda (i v0)
+    (add-streams (integral (scale-stream i (/ 1.0 C)) v0 dt)
+                 (scale-stream i R))))
+
+(define RC1 (RC 5 1 0.5))
