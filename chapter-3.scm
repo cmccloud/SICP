@@ -2500,13 +2500,7 @@
               (smooth input-s)
               (smooth (cons-stream 0 input-s))))
 
-(define rand-inputs
-  (stream-map
-   (lambda (x)
-     (let ((n (random 3)))
-       (if (even? n) (* x n)
-           (* x n -1)))) ones))
-
+;; tests
 (define (test3-76)
   (define doubles (cons-stream 1 (stream-map (partial * 2) doubles)))
   (define smoothed (smooth doubles))
@@ -2515,4 +2509,27 @@
   (define test-stream (stream 1 2 1.5 1 .5 -0.1 -2 -3 -2 -0.5 0.2 3 4))
   (define target-crossings (list 0 0 0 0 0 -1 0 0 0 0 1 0))
   (define test-crossings (make-zero-crossings test-stream))
-  (equal? target-crossings (partial-stream->list 13 test-crossings)))
+  (and (equal? target-crossings (partial-stream->list 13 test-crossings))
+       (= target (stream-ref smoothed 10))))
+
+;; Exercise 3.77
+(define (integral delayed-integrand initial-value dt)
+  (cons-stream
+   initial-value
+   (let ((int (force delayed-integrand)))
+     (if (stream-null? int)
+         the-empty-stream
+         (integral (delay (stream-cdr int))
+                   (+ (* dt (stream-car int))
+                      initial-value)
+                   dt)))))
+
+(define (solve f y0 dt)
+  (define y (integral (delay dy) y0 dt))
+  (define dy (stream-map f y))
+  y)
+
+;; tests
+(define (test3-77)
+  (= (stream-ref (solve (lambda (y) y) 1 0.001) 1000)
+     2.716923932235896))
