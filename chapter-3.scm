@@ -2459,3 +2459,9 @@
                  (scale-stream i R))))
 
 (define RC1 (RC 5 1 0.5))
+
+;; Exercise 3.74
+(define zero-crossings
+  (stream-map sign-change-detector
+              sense-data
+              (cons-stream 0 sense-data)))
