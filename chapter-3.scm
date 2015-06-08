@@ -2359,12 +2359,9 @@
      (* 3 (cadr pair))
      (* 5 (car pair) (cadr pair))))
 
-(define (divisible n m) (= (remainder n m) 0))
-
-(define (not-divis n args)
-  (every (lambda (m) (not (divisible? n m))) args))
+(define (divisible? n m) (= (remainder n m) 0))
 
 (define input-b
-  (stream-filter (lambda (x) (not-divis x '(2 3 5))) integers))
+  (stream-filter (lambda (x) (every (lambda (n) (not (divisible? x n))) '(2 3 5))) integers))
 
 (define solution-b (weighted-pairs input-b input-b weight-b))
