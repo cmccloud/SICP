@@ -500,33 +500,46 @@
 (define (extended-cond-package install-proc eval)
   ;; Internal definitions
   (define (cond-actions clause) (cdr clause))
+
   (define (cond-predicate clause) (car clause))
+
   (define (cond-clauses exp) (cdr exp))
+
   (define (arrow-clause? exp) (eq? (car (cond-actions exp)) '=>))
+
   (define (cond-else-clause? clause) (eq? (cond-predicate clauses) 'else))
+
   (define (sequence->exp seq)
     (cond ((null? seq) seq)
           ((last-exp? seq) (first-exp seq))
           (else (make-begin seq))))
+
   (define (make-begin seq) (cons 'begin seq))
+
   (define (valid-recipient? exp)
     (and (pair? exp)
-         (= (length (cadr exp)) 1))) ;; arguments
+         (pair? (cadr exp)) ;; check for variadic lambda
+         (= (length (cadr exp)) 1))) ;; check for arity
+
+  (define (else->exp first rest clauses)
+    (if (null? rest)
+        (sequence->exp (cond-actions first))
+        (error "Else clause isn't last: COND->IF" clauses)))
+
+  (define (arrow->if first rest)
+    (if (valid-recipient? (caddr first))
+        (make-if (cond-predicate first)
+                 (list (cadr (cond-actions first))
+                       (cond-predicate first))
+                 (expand-clauses rest))
+        (error "Recipient must be single arity procedure: COND-IF" (caddr first))))
+
   (define (expand-clauses clauses)
     (if (null? clauses) 'false
         (let ((first (car clauses))
               (rest (cdr clauses)))
-          (cond ((cond-else-clause? first)
-                 (if (null? rest)
-                     (sequence->exp (cond-actions first))
-                     (error "ELSE clause isn't last: COND->IF" clauses)))
-                ((arrow-clause? first)
-                 (if (valid-recipient? (caddr first))
-                     (make-if (cond-predicate first)
-                              (list (cadr (cond-actions first))
-                                    (cond-predicate first))
-                              (expand-clauses rest))
-                     (error "Recipient must be single arity: COND->IF" (caddr first))))
+          (cond ((cond-else-clause? first) (else->exp first rest clauses))
+                ((arrow-clause? first) (arrow->if first rest))
                 (else (make-if (cond-predicate first)
                                (sequence->exp (cond-actions first))
                                (expand-clauses rest)))))))
@@ -537,7 +550,7 @@
   (install-proc
    (list
     (list 'eval 'cond (lambda (exp env) (eval (cond->if exp) env)))))
-  'cond-package-installed!)
+  'extended-cond-package-installed!)
 
 (define (let-package install-proc eval)
   ;; Internal definitions
