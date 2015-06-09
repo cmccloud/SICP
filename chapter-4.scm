@@ -210,10 +210,212 @@
 ;; Exercise 4.2
 ;; a - The evaluator will attempt to apply the procedure define to x 3
 ;; The particulars of what define could evaluate to in the given environment
-;; aside, we know by definition that x will always be undefined - given that
+;; aside, we know by definition that x will always be undefined given that
 ;; it could never have been associated in any environment.
 
 ;; b
 (define (_application? exp) (tagged-list? exp 'call))
 (define (_operator exp) (cadr exp))
 (define (_operands exp) (cddr exp))
+
+;; Exercise 4.3
+;; Begin Package definitions
+;; ==========================================================
+(define (quote-package install-proc)
+  (install-proc
+   (list
+    (list 'eval 'quote (lambda (exp env) (cadr exp)))))
+  'quote-package-installed!)
+
+(define (assignment-package install-proc)
+  ;; Internal procedures
+  (define (assignment-variable exp) (cadr exp))
+  (define (assignment-value exp) (caddr exp))
+  (define (eval-assignment exp env)
+    (set-variable-value! (assignment-variable exp)
+                         (eval (assignment-value exp) env)
+                         env))
+  (install-proc
+   (list
+    (list 'eval 'set! eval-assignment)))
+  'assignment-package-installed!)
+
+(define (definition-package install-proc)
+  ;; Internal procedures
+  (define (definition-variable exp)
+    (if (symbol? (cadr exp))
+        (cadr exp)
+        (caadr exp)))
+
+  (define (definition-value exp)
+    (if (symbol? (cadr exp))
+        (caddr exp)
+        (make-lambda (cdadr exp)
+                     (cddr exp))))
+
+  (define (make-lambda parameters body)
+    (cons 'lambda (cons parameters body)))
+
+  (define (eval-definition exp env)
+    (define-variable! (definition-variable exp)
+      (eval (definition-value exp) env)
+      env)
+    'ok)
+
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'define eval-definition)))
+  'definition-package-installed!)
+
+(define (if-package install-proc)
+  ;; Internal Procedures
+  (define (if-predicate exp) (cadr exp))
+  (define (if-consquent exp) (caddr exp))
+  (define (if-alternative exp)
+    (if (not (null? (cdddr exp)))
+        (cdddr exp)
+        'false))
+  (define (eval-if exp env)
+    (if (true? (eval (if-predicate exp) env))
+        (eval (if-consequent exp) env)
+        (eval (if-alternative exp) env)))
+
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'if eval-if)))
+  'if-package-installed!)
+
+(define (lambda-package install-proc)
+  ;; Internal Procedures
+  (define (lambda-parameters exp) (cadr exp))
+  (define (lambda-body exp) (cddr exp))
+  (define (make-procedure exp env)
+    ;; incomplete at this time
+    )
+  (install-proc
+   (list
+    (list 'eval 'lambda make-procedure)))
+  'lambda-package-installed!)
+
+(define (begin-package install-proc)
+  ;; Internal Procedures
+  (define (begin-actions exp) (cdr exp))
+  (define (first-exp exps) (car exps))
+  (define (rest-exps exps) (cadr exps))
+  (define (last-exp? exps) (null? (cdr exps)))
+  (define (eval-sequence exps env)
+    (cond ((last-exp? exps)
+           (eval (first-exp exps) env))
+          (else
+           (eval (first-exp exps) env)
+           (eval-sequence (rest-exps exps) env))))
+
+  (install-proc
+   (list
+    (list 'eval 'begin (lambda (exp env)
+                         (eval-sequence
+                          (begin-actions exp)
+                          env)))))
+  'begin-package-installed!)
+
+(define (cond-package install-proc)
+  ;; Internal definitions
+  (define (cond-actions clause) (cdr clause))
+  (define (cond-predicate clause) (car clause))
+  (define (cond-clauses exp) (cdr exp))
+  (define (cond-else-clause? clause) (eq? (cond-predicate clauses) 'else))
+  (define (sequence->exp seq)
+    (cond ((null? seq) seq)
+          ((last-exp? seq) (first-exp seq))
+          (else (make-begin seq))))
+  (define (make-begin seq) (cons 'begin seq))
+  (define (expand-clauses clauses)
+    (if (null? clauses)
+        'false
+        (let ((first (car clauses))
+              (rest (cdr clauses)))
+          (if (cond-else-clauses? first)
+              (if (null? rest)
+                  (sequence->exp (cond-actions first))
+                  (error "ELSE clause isn't last: COND->IF" clauses))
+              (make-if (cond-predicate first)
+                       (sequence->exp (cond-actions first))
+                       (expand-clauses rest))))))
+  (define (cond->if exp)
+    (expand-clauses (cond-clauses exp)))
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'cond (lambda (exp env) (eval (cond->if exp) env)))))
+  'cond-package-installed!)
+
+(define (self-evaluating-package install-proc)
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'self-evaluating (lambda (exp env) exp))))
+  'self-evaluation-package-installed!)
+
+(define (variable-package install-proc)
+  ;; Internal definitions
+  (define (lookup-variable-value exp env)
+    ;; not yet defined
+    )
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'variable lookup-variable-value)))
+  'variable-package-installed!)
+;; ==========================================================
+(define (make-installer get put)
+  ;; Builds an installer with given get and put operations
+  ;; Installer then takes in a list of procedures and attempts to
+  ;; install them using supplied get and put operations
+  ;; Procedure :: (type:: symbol, name :: symbol, proc :: function)
+
+  (define (install-procedure name type proc)
+    ;; Attempts to install a given procedure under name for a given type
+    ;; Installs procedure or signals error on namespace conflict
+    (let ((conflict (get name type)))
+      (cond ((null? conflict) (put name type proc))
+            (else (error "Name-space conflict: INSTALL-PROCEDURE"
+                         (list name type proc))))))
+
+  (lambda (procedures)
+    (for-each install-procedure procedures)))
+
+(define table (make-table))
+(define (get type name) ((table 'get) name type))
+(define (put type name proc) ((table 'put) name type proc))
+(define table-installer (make-installer get put))
+
+;; Install packages
+(self-evaluation-package table-installer)
+(variable-package table-installer)
+(quote-package table-installer)
+(assignment-package table-installer)
+(definition-package table-installer)
+(if-package table-installer)
+(lambda-package table-installer)
+(begin-package table-installer)
+(cond-package table-installer)
+
+;; Eval definition
+(define (data-type exp)
+  (cond ((number? exp) 'self-evaluating)
+        ((string? exp) 'self-evaluating)
+        ((symbol? exp) 'variable)
+        (else (car exp))))
+
+(define (application? exp) (pair? exp))
+
+(define (eval exp env)
+  (let ((dispatch-procedure (get 'eval (data-type exp))))
+    (cond ((not (null? dispatch-procedure))
+           (dispatch-procedure exp env))
+          ((application? exp)
+           (apply (eval (operator exp) env)
+                  (list-of-values (operands exp) env)))
+          (else (error "Unknown expression type: EVAL" exp)))))
