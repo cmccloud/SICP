@@ -221,14 +221,17 @@
 ;; Exercise 4.3
 
 ;; Begin Package definitions
+;; Packages accept as arguments an installation procedure
+;; and the top level eval form with which to make recursive
+;; eval calls
 ;; ==========================================================
-(define (quote-package install-proc)
+(define (quote-package install-proc eval)
   (install-proc
    (list
     (list 'eval 'quote (lambda (exp env) (cadr exp)))))
   'quote-package-installed!)
 
-(define (assignment-package install-proc)
+(define (assignment-package install-proc eval)
   ;; Internal procedures
   (define (assignment-variable exp) (cadr exp))
   (define (assignment-value exp) (caddr exp))
@@ -241,7 +244,7 @@
     (list 'eval 'set! eval-assignment)))
   'assignment-package-installed!)
 
-(define (definition-package install-proc)
+(define (definition-package install-proc eval)
   ;; Internal procedures
   (define (definition-variable exp)
     (if (symbol? (cadr exp))
@@ -269,7 +272,7 @@
     (list 'eval 'define eval-definition)))
   'definition-package-installed!)
 
-(define (if-package install-proc)
+(define (if-package install-proc eval)
   ;; Internal Procedures
   (define (if-predicate exp) (cadr exp))
   (define (if-consquent exp) (caddr exp))
@@ -288,7 +291,7 @@
     (list 'eval 'if eval-if)))
   'if-package-installed!)
 
-(define (lambda-package install-proc)
+(define (lambda-package install-proc eval)
   ;; Internal Procedures
   (define (lambda-parameters exp) (cadr exp))
   (define (lambda-body exp) (cddr exp))
@@ -300,7 +303,7 @@
     (list 'eval 'lambda make-procedure)))
   'lambda-package-installed!)
 
-(define (begin-package install-proc)
+(define (begin-package install-proc eval)
   ;; Internal Procedures
   (define (begin-actions exp) (cdr exp))
   (define (first-exp exps) (car exps))
@@ -321,7 +324,7 @@
                           env)))))
   'begin-package-installed!)
 
-(define (cond-package install-proc)
+(define (cond-package install-proc eval)
   ;; Internal definitions
   (define (cond-actions clause) (cdr clause))
   (define (cond-predicate clause) (car clause))
@@ -352,14 +355,14 @@
     (list 'eval 'cond (lambda (exp env) (eval (cond->if exp) env)))))
   'cond-package-installed!)
 
-(define (self-evaluating-package install-proc)
+(define (self-evaluating-package install-proc eval)
   ;; Interface
   (install-proc
    (list
     (list 'eval 'self-evaluating (lambda (exp env) exp))))
   'self-evaluation-package-installed!)
 
-(define (variable-package install-proc)
+(define (variable-package install-proc eval)
   ;; Internal definitions
   (define (lookup-variable-value exp env)
     ;; not yet defined
@@ -394,27 +397,17 @@
 (define (put type name proc) ((table 'put) name type proc))
 (define table-installer (make-installer get put))
 
-;; Install packages
-(self-evaluation-package table-installer)
-(variable-package table-installer)
-(quote-package table-installer)
-(assignment-package table-installer)
-(definition-package table-installer)
-(if-package table-installer)
-(lambda-package table-installer)
-(begin-package table-installer)
-(cond-package table-installer)
-
 ;; Eval definition
-(define (expression-type exp)
-  (cond ((number? exp) 'self-evaluating)
-        ((string? exp) 'self-evaluating)
-        ((symbol? exp) 'variable)
-        (else (car exp))))
-
-(define (application? exp) (pair? exp))
-
 (define (eval exp env)
+
+  (define (application? exp) (pair? exp))
+
+  (define (expression-type exp)
+    (cond ((number? exp) 'self-evaluating)
+          ((string? exp) 'self-evaluating)
+          ((symbol? exp) 'variable)
+          (else (car exp))))
+
   (let ((dispatch-procedure (get 'eval (expression-type exp))))
     (cond ((not (null? dispatch-procedure))
            (dispatch-procedure exp env))
@@ -422,3 +415,83 @@
            (apply (eval (operator exp) env)
                   (list-of-values (operands exp) env)))
           (else (error "Unknown expression type: EVAL" exp)))))
+
+;; Install packages
+(self-evaluation-package table-installer eval)
+(variable-package table-installer eval)
+(quote-package table-installer eval)
+(assignment-package table-installer eval)
+(definition-package table-installer eval)
+(if-package table-installer eval)
+(lambda-package table-installer eval)
+(begin-package table-installer eval)
+(cond-package table-installer eval)
+
+;; Exercise 4.4
+;; Installed as new special forms
+(define (and-package install-proc eval)
+  ;; Internal definitions
+  (define (preds exp) (cdr exp))
+  (define (first-pred and-exps) (car and-exps))
+  (define (rest-preds and-exps) (cdr and-exps))
+  (define (last-pred? and-exps) (null? (cdr and-exps)))
+  (define (eval-and and-exps env)
+    (if (null? and-exps)
+        'true
+        (let ((first-value (eval (first-pred and-exps) env)))
+          (cond ((last-pred? and-exps) first-value)
+                ((true? first-value)
+                 (eval-and (rest-preds and-exps) env))
+                (else 'false)))))
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'and (lambda (exp env) (eval-and (preds exp) env)))))
+  'and-package-installed!)
+
+(define (or-package install-proc eval)
+  ;; Internal definitions
+  (define (preds exp) (cdr exp))
+  (define (first-pred or-exps) (car or-exps))
+  (define (rest-preds or-exps) (cdr or-exps))
+  (define (last-pred? or-exps) (null? (cdr or-exps)))
+  (define (eval-or or-exps env)
+    (if (null? or-exps)
+        'false
+        (let ((first-value (eval (first-pred or-exps) env)))
+          (cond ((true? first-value) 'true)
+                (else (eval-or (rest-preds or-exps) env))))))
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'or (lambda (exp env) (eval-or (preds exp) env)))))
+  'or-package-installed!)
+
+(and-package table-installer eval)
+(or-package table-installer eval)
+
+;; Installed as derived expressions
+(define (and-package install-proc eval)
+  (define (make-if pred cons alt)
+    (list 'if pred cons alt))
+  (define (eval-and exps env)
+    (cond ((null? exps) 'true)
+          ((null? (cdr exps))
+           (eval (make-if (car exps) (car exps) 'false) env))
+          (else (eval (make-if (car exps) (cons 'and (cdr exps)) 'false) env))))
+  (install-proc
+   (list
+    (list 'eval 'and (lambda (exp env) (eval-and (cdr exps) env)))))
+  'and-package-installed!)
+
+(define (or-package install-proc eval)
+  (define (make-if pred cons alt)
+    (list 'if pred cons alt))
+  (define (eval-or exps env)
+    (if (null? exps)
+        'false
+        (eval (make-if (car exps) (car exps) (cons 'or (cdr exps))) env)))
+  (install-proc
+   (list
+    (list 'eval 'or (lambda (exp env) (eval-or (cdr exps) env)))))
+  'or-package-installed!)
