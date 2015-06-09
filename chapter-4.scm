@@ -219,6 +219,7 @@
 (define (_operands exp) (cddr exp))
 
 ;; Exercise 4.3
+
 ;; Begin Package definitions
 ;; ==========================================================
 (define (quote-package install-proc)
@@ -368,12 +369,14 @@
    (list
     (list 'eval 'variable lookup-variable-value)))
   'variable-package-installed!)
+;; End Package Definitions
 ;; ==========================================================
+
 (define (make-installer get put)
   ;; Builds an installer with given get and put operations
   ;; Installer then takes in a list of procedures and attempts to
   ;; install them using supplied get and put operations
-  ;; Procedure :: (type:: symbol, name :: symbol, proc :: function)
+  ;; Procedure :: (name:: symbol, type :: symbol, proc :: function)
 
   (define (install-procedure name type proc)
     ;; Attempts to install a given procedure under name for a given type
@@ -403,7 +406,7 @@
 (cond-package table-installer)
 
 ;; Eval definition
-(define (data-type exp)
+(define (expression-type exp)
   (cond ((number? exp) 'self-evaluating)
         ((string? exp) 'self-evaluating)
         ((symbol? exp) 'variable)
@@ -412,7 +415,7 @@
 (define (application? exp) (pair? exp))
 
 (define (eval exp env)
-  (let ((dispatch-procedure (get 'eval (data-type exp))))
+  (let ((dispatch-procedure (get 'eval (expression-type exp))))
     (cond ((not (null? dispatch-procedure))
            (dispatch-procedure exp env))
           ((application? exp)
