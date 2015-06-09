@@ -204,5 +204,5 @@
                 (sequence->exp (cond-actions first))
                 (error "ELSE clauses isn't last: COND->IF" clauses))
             (make-if (cond-predicate first)
-                     (sequence-<exp (cond-actions first))
+                     (sequence->exp (cond-actions first))
                      (expand-clauses rest))))))
