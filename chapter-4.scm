@@ -495,3 +495,46 @@
    (list
     (list 'eval 'or (lambda (exp env) (eval-or (cdr exps) env)))))
   'or-package-installed!)
+
+;; Exercise 4.5
+(define (extended-cond-package install-proc eval)
+  ;; Internal definitions
+  (define (cond-actions clause) (cdr clause))
+  (define (cond-predicate clause) (car clause))
+  (define (cond-clauses exp) (cdr exp))
+  (define (arrow-clause? exp) (eq? (car (cond-actions exp)) '=>))
+  (define (cond-else-clause? clause) (eq? (cond-predicate clauses) 'else))
+  (define (sequence->exp seq)
+    (cond ((null? seq) seq)
+          ((last-exp? seq) (first-exp seq))
+          (else (make-begin seq))))
+  (define (make-begin seq) (cons 'begin seq))
+  (define (valid-recipient? exp)
+    (and (pair? exp)
+         (= (length (cadr exp)) 1))) ;; arguments
+  (define (expand-clauses clauses)
+    (if (null? clauses) 'false
+        (let ((first (car clauses))
+              (rest (cdr clauses)))
+          (cond ((cond-else-clause? first)
+                 (if (null? rest)
+                     (sequence->exp (cond-actions first))
+                     (error "ELSE clause isn't last: COND->IF" clauses)))
+                ((arrow-clause? first)
+                 (if (valid-recipient? (caddr first))
+                     (make-if (cond-predicate first)
+                              (list (cadr (cond-actions first))
+                                    (cond-predicate first))
+                              (expand-clauses rest))
+                     (error "Recipient must be single arity: COND->IF" (caddr first))))
+                (else (make-if (cond-predicate first)
+                               (sequence->exp (cond-actions first))
+                               (expand-clauses rest)))))))
+
+  (define (cond->if exp)
+    (expand-clauses (cond-clauses exp)))
+  ;; Interface
+  (install-proc
+   (list
+    (list 'eval 'cond (lambda (exp env) (eval (cond->if exp) env)))))
+  'cond-package-installed!)
