@@ -228,18 +228,23 @@
 
 (define (let? exp) (tagged-list? exp 'let))
 
-(define (let->combination exps)
+(define (let->combination exp)
 
-  (define (let-bindings exp) (car exp))
+  (define (let-bindings exp) (cadr exp))
 
-  (define (let-body exp) (cadr exp))
+  (define (let-body exp) (cddr exp))
 
-  (define (binding-vars binding)
-    (map car binding))
+  (define (binding-exps bindings)
+    (if (null? bindings)
+        '()
+        (cons (cadar bindings)
+              (binding-exps (cdr bindings)))))
 
-  (define (binding-exps binding)
-    (map cadr binding))
+  (define (binding-var binding) (car binding))
 
-  (list (make-lambda (binding-vars (let-bindings exp))
-                     (let-body exp))
+  (cons (make-lambda
+         (map binding-var (let-bindings exp))
+         (let-body exp))
         (binding-exps (let-bindings exp))))
+
+
