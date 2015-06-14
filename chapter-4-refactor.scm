@@ -16,6 +16,7 @@
          (eval-sequence (begin-actions exp) env))
         ((and? exp) (eval (and->if (and-predicates exp)) env))
         ((or? exp) (eval (or->if (or-predicates exp) env)))
+        ((let? exp) (eval (let->combination (cdr exp)) env))
         ((cond? exp) (eval (cond->if exp) env))
         ((application? exp)
          (apply (eval (operator exp) env)
@@ -199,10 +200,15 @@
                              (expand-clauses rest)))))))
 
 (define (and? exp) (tagged-list? exp 'and))
+
 (define (and-predicates exp) (cdr exp))
+
 (define (first-pred preds) (car preds))
+
 (define (rest-preds preds) (cdr preds))
+
 (define (last-pred? preds) (null? (cadr preds)))
+
 (define (and->if preds)
   (cond ((null? preds) 'true)
         ((last-pred? preds) (first-pred preds))
@@ -211,10 +217,29 @@
                        'false))))
 
 (define (or? exp) (tagged-list? exp 'or))
+
 (define (or-predicates exp) (cdr exp))
+
 (define (or->if preds)
   (cond ((null? preds) 'false)
         (else (make-if (first-pred preds)
                        (first-pred preds)
                        (or->if (rest-preds preds))))))
 
+(define (let? exp) (tagged-list? exp 'let))
+
+(define (let->combination exps)
+
+  (define (let-bindings exp) (car exp))
+
+  (define (let-body exp) (cadr exp))
+
+  (define (binding-vars binding)
+    (map car binding))
+
+  (define (binding-exps binding)
+    (map cadr binding))
+
+  (list (make-lambda (binding-vars (let-bindings exp))
+                     (let-body exp))
+        (binding-exps (let-bindings exp))))
