@@ -533,7 +533,8 @@
                  (list (cadr (cond-actions first))
                        (cond-predicate first))
                  (expand-clauses rest))
-        (error "Recipient must be single arity procedure: COND-IF" (caddr first))))
+        (error "Recipient must be single arity procedure: COND-IF"
+               (caddr first))))
 
   (define (expand-clauses clauses env)
     (if (null? clauses) 'false
@@ -570,3 +571,4 @@
    (list
     (list 'eval 'let (lambda (exp env) (eval (let->combination exp) env)))))
   'let-package-installed!)
+
