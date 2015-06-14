@@ -171,18 +171,32 @@
 
 (define (cond->if exp) (expand-clauses (cond-clauses exp)))
 
+(define (arrow-clause? clause)
+  (eq? (car (cond-actions clause)) '=>))
+
+(define (make-recipient clause)
+  ;; This implementation of make-recipient doesn't test for the validity
+  ;; of the recipient procedure
+  (list (cdr (cond-actions clause))
+        (cond-predicate clause)))
+
 (define (expand-clauses clauses)
   (if (null? clauses)
       'false
       (let ((first (car clauses))
             (rest (cdr clauses)))
-        (if (cond-else-clause? first)
-            (if (null? rest)
-                (sequence->exp (cond-actions first))
-                (error "ELSE clause isn't last: COND->IF" clauses))
-            (make-if (cond-predicate first)
-                     (sequence->exp (cond-actions first))
-                     (expand-clauses rest))))))
+        (cond ((cond-else-clause? first)
+               (if (null? rest)
+                   (sequence->exp (cond-actions first))
+                   (error "ELSE clause isn't last: COND->IF"
+                          clauses)))
+              ((arrow-clause? first)
+               (make-if (cond-predicate first)
+                        (make-recipient first)
+                        (expand-clauses rest)))
+              (else (make-if (cond-predicate first)
+                             (sequence->exp (cond-actions first))
+                             (expand-clauses rest)))))))
 
 (define (and? exp) (tagged-list? exp 'and))
 (define (and-predicates exp) (cdr exp))
@@ -203,3 +217,4 @@
         (else (make-if (first-pred preds)
                        (first-pred preds)
                        (or->if (rest-preds preds))))))
+
