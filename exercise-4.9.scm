@@ -45,3 +45,21 @@
    (list
     (list 'eval 'do (lambda (exp env) (eval (do->combination exp) env)))))
   'do-package-installed!)
+
+;; tests
+(define (test4-9)
+  (define exp
+    '(do ((vec (make-vector 5))
+          (i 0 (+ i 1)))
+         ((= i 5) vec)
+       (vector-set! vec i i)))
+  (define target
+    '(((lambda () (define (do-iter vec i)
+                    (if (= i 5)
+                        vec
+                        (begin
+                          (vector-set! vec i i)
+                          (do-iter vec (+ i 1)))))
+               do-iter)) (make-vector 5) 0))
+  (define result (do->combination exp))
+  (equal? result target))
