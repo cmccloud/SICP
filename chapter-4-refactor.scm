@@ -111,12 +111,18 @@
 
 (define (lambda? exp) (tagged-list? exp 'lambda))
 
+(define (make-call proc . args)
+  ;; all procedure invocations follow this form
+  (cons proc args))
+
+(define (make-lambda parameters . body)
+  ;; Producing a lambda expression whose body is a sequence of expressions
+  ;; is done with apply - e.g. (apply make-lambda '(x y z) '((set! x (* y 2)) (* x z)))
+  (apply make-call 'lambda parameters body))
+
 (define (lambda-parameters exp) (cadr exp))
 
 (define (lambda-body exp) (cddr exp))
-
-(define (make-lambda parameters body)
-  (cons 'lambda (cons parameters body)))
 
 (define (if? exp) (tagged-list? exp 'if))
 
@@ -130,7 +136,7 @@
       'false))
 
 (define (make-if predicate consequent alternative)
-  (list 'if predicate consequent alternative))
+  (make-call 'if predicate consequent alternative))
 
 (define (begin-actions exp) (cdr exp))
 
@@ -145,7 +151,7 @@
         ((last-exp? seq) (first-exp seq))
         (else (make-begin seq))))
 
-(define (make-begin seq) (cons 'begin seq))
+(define (make-begin seq) (apply make-call 'begin seq))
 
 (define (application? exp) (pair? exp))
 
@@ -178,8 +184,8 @@
 (define (make-recipient clause)
   ;; This implementation of make-recipient doesn't test for the validity
   ;; of the recipient procedure
-  (list (cdr (cond-actions clause))
-        (cond-predicate clause)))
+  (make-call (cadr (cond-actions clause))
+             (cond-predicate clause)))
 
 (define (expand-clauses clauses)
   (if (null? clauses)
@@ -229,22 +235,75 @@
 (define (let? exp) (tagged-list? exp 'let))
 
 (define (let->combination exp)
-
+  (define (named-let? exp) (symbol? (cadr exp)))
   (define (let-bindings exp) (cadr exp))
-
   (define (let-body exp) (cddr exp))
-
   (define (binding-exps bindings)
     (if (null? bindings)
         '()
         (cons (cadar bindings)
               (binding-exps (cdr bindings)))))
-
   (define (binding-var binding) (car binding))
-
   (cons (make-lambda
          (map binding-var (let-bindings exp))
          (let-body exp))
         (binding-exps (let-bindings exp))))
 
+;; 4.1.3 - Evaluator Data Structures
+(define (true? x) (not (eq? x false)))
+(define (false? x) (eq? x false))
+(define (make-procedure parameters body env)
+  (make-call 'procedure parameters body env))
+(define (compound-procedure? p)
+  (tagged-list? p 'procedure))
+(define (procedure-parameters p) (cadr p))
+(define (procedure-body p) (caddr p))
+(define (procedure-environment p) (cadddr p))
 
+;; Operations on Environments
+(define (enclosing-environment env) (cdr env))
+(define (first-frame env) (car env))
+(define the-empty-environment '())
+(define (make-frame variables values)
+  (cons variables values))
+(define (frame-variables frame) (car frame))
+(define (frame-values frame) (cdr frame))
+(define (add-binding-to-frame! var val frame)
+  (set-car! frame (cons var (car frame)))
+  (set-cdr! frame (cons val (cdr frame))))
+
+(define (extend-environment var vals base-env)
+  (if (= (length vars) (length vals))
+      (cons (make-frame var vals) base-env)
+      (if (< (length vars) (length vals))
+          (error "Too many arguments supplied" vars vals)
+          (error "Too few arguments supplied" vars vals))))
+
+(define (traverse-env fn var env)
+  (define (env-loop env)
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (env-loop (enclosing-environment env)))
+            ((eq? var (car vars)) (fn vars vals))
+            (else (scan (cdr vars) (cdr vals)))))
+    (if (eq? env the-empty-environment)
+        (error "Unbound variable" var)
+        (let ((frame (first-frame env)))
+          (scan (frame-variables frame)
+                (frame-values frame)))))
+  (env-loop env))
+
+(define lookup-variable-value
+  (partial traverse-env (lambda (vars vals) (car vals))))
+
+(define (set-variable-value! var val env)
+  (traverse-env (lambda (vars vals) (set-car! vals val)) var env))
+
+(define (define-variable! var val env)
+  (let ((frame (first-frame env)))
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (add-binding-to-frame! var val frame))
+            ((eq? var (car vars)) (set-car! vals val))
+            (else (scan (cdr vars) (cdr vals)))))
+    (scan (frame-variables frame) (frame-values frame))))
