@@ -3,8 +3,15 @@
 ;; is quite simple. We could imagine a first class unless being useful
 ;; for things like error handling and debugging, in the same way that
 ;; a first class if would be useful, e.g:
+;; Instead of this:
 ;; (some-fn (unless (invalid? data) (process data) (error "Invalid Data!")))
-;; (define error-handler (partial-last unless (error "Invalid Data!)))
+;; We might write this:
+;; (define error-handler (partial-last unless (error "Invalid Data!) (process-data)))
+;; (some-fn (error-handler (invalid? data)))
+;; (another-fn (error-handler (tree-like? data)))
+;; Where partial last would look like:
+;; (define (partial-last fn . args)
+;;   (lambda y (apply fn (reverse (append args y)))))
 
 ;; One could introduce a unless as a special form as follows
 (define (unless? exp) (tagged-list? exp 'unless))
