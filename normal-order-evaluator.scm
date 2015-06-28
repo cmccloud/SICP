@@ -6,6 +6,7 @@
   apply)
 ;; ============================================================
 (define nil '())
+
 (define (force-it obj)
   (cond ((thunk? obj)
          (let ((result (actual-value (thunk-exp obj)
@@ -25,7 +26,9 @@
 (define (thunk-exp thunk) (cadr thunk))
 
 (define (thunk-env thunk) (caddr thunk))
+
 (define (evaluated-thunk? obj) (tagged-list? obj 'evaluated-thunk))
+
 (define (thunk-value evaluated-thunk)
   (cadr evaluated-thunk))
 

@@ -6,6 +6,7 @@
 ;; ============================================================
 
 (define nil '()) ;; convenience
+
 (define (partial f . x)
   (lambda y (scheme-apply f (append x y))))
 
@@ -443,4 +444,3 @@
 (define the-global-environment (setup-environment))
 
 (driver-loop)
-
